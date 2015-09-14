@@ -1,18 +1,9 @@
 # Object files
 *.o
-*.ko
-*.obj
-*.elf
-
-# Precompiled Headers
-*.gch
-*.pch
 
 # Libraries
 *.lib
 *.a
-*.la
-*.lo
 
 # Shared objects (inc. Windows DLLs)
 *.dll
@@ -24,9 +15,39 @@
 *.exe
 *.out
 *.app
-*.i*86
-*.x86_64
-*.hex
 
-# Debug files
-*.dSYM/
+# Keil
+*.d
+*.crf
+*.bak
+*.zip
+*.lst
+*.map
+*.sct
+*.__i
+*.html
+*.txt
+*.tra
+*.Lnp
+*.htm
+*.dep
+*.axf
+*.lna
+*.tra
+*.jonathan*
+
+# doxygen
+*.png
+*.fed
+*.js
+*._2i
+*.l2p
+*.css
+*.xml
+*.xsd
+*.tex
+*.sty
+*.BASE.*
+*.LOCAL.*
+*.REMOTE.*
+*.001
