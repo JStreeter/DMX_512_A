@@ -12,9 +12,10 @@
 #include <main.h>
 #include <stdio.h>
 #include <stdint.h>
-#include "TM4C123.h"
-//#include <TM4C123_DMX.h>
-//#include <TM4C129.h>
+#include "TM4C123.h"                    // Device header
+#include "RTE_Components.h"             // Component selection
+#include "Serial.h"
+
 //#include <Globals.h>
 ////////////////////////////////////////////////////////////////////////////////
 	// EXTERNALS
