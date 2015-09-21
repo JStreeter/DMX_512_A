@@ -46,8 +46,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 {
+	SysCtlClockSet(SYSCTL_SYSDIV_4|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN);
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
 	return;
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -67,16 +68,17 @@ int main(void)
 	volatile unsigned long BLAH = SYSCTL_SYSDIV_1;
 	
 	
-	SysCtlClockSet(SYSCTL_SYSDIV_4|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN);
-	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
-	GPIOPinTypeGPIOOutput(GPIOA_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3);
+	GPIOPinTypeGPIOOutput(GPIOF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3);
 	while(1)
 	{
 		// Turn on the LED
-//		GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3, ui8LED);
+		
+		GPIOPinWrite(GPIOF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3, ui8LED);
 		// Delay for a bit
 		SysCtlDelay(2000000);
 		// Cycle through Red, Green and Blue LEDs
 		if (ui8LED == 8) {ui8LED = 2;} else {ui8LED = ui8LED*2;}
+		
+		
 	}
 }

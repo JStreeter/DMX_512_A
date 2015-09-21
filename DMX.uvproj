@@ -441,16 +441,6 @@
               <FilePath>C:\ti\TivaWare_C_Series-2.1.1.71\driverlib\adc.c</FilePath>
             </File>
             <File>
-              <FileName>aes.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>C:\ti\TivaWare_C_Series-2.1.1.71\driverlib\aes.c</FilePath>
-            </File>
-            <File>
-              <FileName>can.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>C:\ti\TivaWare_C_Series-2.1.1.71\driverlib\can.c</FilePath>
-            </File>
-            <File>
               <FileName>comp.c</FileName>
               <FileType>1</FileType>
               <FilePath>C:\ti\TivaWare_C_Series-2.1.1.71\driverlib\comp.c</FilePath>
@@ -461,29 +451,9 @@
               <FilePath>C:\ti\TivaWare_C_Series-2.1.1.71\driverlib\cpu.c</FilePath>
             </File>
             <File>
-              <FileName>crc.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>C:\ti\TivaWare_C_Series-2.1.1.71\driverlib\crc.c</FilePath>
-            </File>
-            <File>
-              <FileName>des.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>C:\ti\TivaWare_C_Series-2.1.1.71\driverlib\des.c</FilePath>
-            </File>
-            <File>
               <FileName>eeprom.c</FileName>
               <FileType>1</FileType>
               <FilePath>C:\ti\TivaWare_C_Series-2.1.1.71\driverlib\eeprom.c</FilePath>
-            </File>
-            <File>
-              <FileName>emac.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>C:\ti\TivaWare_C_Series-2.1.1.71\driverlib\emac.c</FilePath>
-            </File>
-            <File>
-              <FileName>epi.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>C:\ti\TivaWare_C_Series-2.1.1.71\driverlib\epi.c</FilePath>
             </File>
             <File>
               <FileName>flash.c</FileName>
@@ -491,19 +461,9 @@
               <FilePath>C:\ti\TivaWare_C_Series-2.1.1.71\driverlib\flash.c</FilePath>
             </File>
             <File>
-              <FileName>fpu.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>C:\ti\TivaWare_C_Series-2.1.1.71\driverlib\fpu.c</FilePath>
-            </File>
-            <File>
               <FileName>gpio.c</FileName>
               <FileType>1</FileType>
               <FilePath>C:\ti\TivaWare_C_Series-2.1.1.71\driverlib\gpio.c</FilePath>
-            </File>
-            <File>
-              <FileName>hibernate.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>C:\ti\TivaWare_C_Series-2.1.1.71\driverlib\hibernate.c</FilePath>
             </File>
             <File>
               <FileName>i2c.c</FileName>
@@ -516,39 +476,9 @@
               <FilePath>C:\ti\TivaWare_C_Series-2.1.1.71\driverlib\interrupt.c</FilePath>
             </File>
             <File>
-              <FileName>lcd.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>C:\ti\TivaWare_C_Series-2.1.1.71\driverlib\lcd.c</FilePath>
-            </File>
-            <File>
-              <FileName>mpu.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>C:\ti\TivaWare_C_Series-2.1.1.71\driverlib\mpu.c</FilePath>
-            </File>
-            <File>
-              <FileName>onewire.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>C:\ti\TivaWare_C_Series-2.1.1.71\driverlib\onewire.c</FilePath>
-            </File>
-            <File>
               <FileName>pwm.c</FileName>
               <FileType>1</FileType>
               <FilePath>C:\ti\TivaWare_C_Series-2.1.1.71\driverlib\pwm.c</FilePath>
-            </File>
-            <File>
-              <FileName>qei.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>C:\ti\TivaWare_C_Series-2.1.1.71\driverlib\qei.c</FilePath>
-            </File>
-            <File>
-              <FileName>shamd5.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>C:\ti\TivaWare_C_Series-2.1.1.71\driverlib\shamd5.c</FilePath>
-            </File>
-            <File>
-              <FileName>ssi.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>C:\ti\TivaWare_C_Series-2.1.1.71\driverlib\ssi.c</FilePath>
             </File>
             <File>
               <FileName>sw_crc.c</FileName>
@@ -584,16 +514,6 @@
               <FileName>udma.c</FileName>
               <FileType>1</FileType>
               <FilePath>C:\ti\TivaWare_C_Series-2.1.1.71\driverlib\udma.c</FilePath>
-            </File>
-            <File>
-              <FileName>usb.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>C:\ti\TivaWare_C_Series-2.1.1.71\driverlib\usb.c</FilePath>
-            </File>
-            <File>
-              <FileName>watchdog.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>C:\ti\TivaWare_C_Series-2.1.1.71\driverlib\watchdog.c</FilePath>
             </File>
           </Files>
         </Group>
