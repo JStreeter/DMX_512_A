@@ -16,8 +16,18 @@
 #ifndef SERIAL_H
 #define SERIAL_H
 
+struct __FILE
+{
+  int handle;
+  /* Whatever you require here. If the only file you are using is */
+  /* standard output using printf() for debugging, no file handling */
+  /* is required. */
+  //Does not look like I need more
+};
+
 extern void SER_Initialize(void);
 extern int  SER_GetChar   (void);
 extern int  SER_PutChar   (int c);
+
 
 #endif
