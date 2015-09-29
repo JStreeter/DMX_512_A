@@ -17,4 +17,35 @@ typedef unsigned int    U32;    //Standard Naming
 typedef long long       S64;    //Standard Naming
 typedef unsigned long long U64; //Standard Naming
 
+typedef enum
+{
+	Null,						//Empty
+	Standard,
+} _DMX_Message_Type;
+
+struct _DMX_Message;
+struct _DMX_Message_Flags;
+
+typedef struct _sQueque_Link QLink;
+typedef struct _DMX_Message DmxMessage;
+typedef struct _DMX_Message_Flags DmxFlags;
+
+struct _DMX_Message_Flags
+{
+	U16 RFU : 16;				//
+};
+
+struct _DMX_Message
+{
+	_DMX_Message_Type	Type;
+	DmxFlags			MessageFlags;
+	U32					RFU;
+};
+
+struct _sQueque_Link
+{
+	DmxMessage	Message;
+	QLink		*Link;
+};
+
 #endif

@@ -77,8 +77,8 @@ void RngAdd(U8 NewData);
 int fputc(int ch, FILE *f) 
 {
 	/* Your implementation of fputc(). */
-	while (UART1->FR & UART_FR_TXFF);//<<<<<<-------------------------------------------WHILE!!!!
-	UART1->DR = ch;
+	while (UART0->FR & UART_FR_TXFF);//<<<<<<-------------------------------------------WHILE!!!!
+	UART0->DR = ch;
   return ch;
 }
 int ferror(FILE *f)
