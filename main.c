@@ -63,9 +63,6 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_UART1);//B0,B1
 	
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);//Timer 0
-	
-	// Configure HW to work with 16 MHz XTAL, PLL enabled, system clock of 40 MHz
-    //SYSCTL->RCC =SYSCTL_RCC_XTAL_16MHZ | SYSCTL_RCC_OSCSRC_MAIN | SYSCTL_RCC_USESYSDIV | (4 << SYSCTL_RCC_SYSDIV_S);
 
     // Set GPIO ports to use APB (not needed since default configuration -- for clarity)
     // Note UART on port A must use APB
@@ -92,6 +89,8 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	UARTEnable(UART0_BASE);
 	UARTClockSourceSet(UART0_BASE,UART_CLOCK_SYSTEM);
 	UARTConfigSetExpClk(UART0_BASE, SysCtlClockGet(), DebugBaud, UART_CONFIG_WLEN_8 | UART_CONFIG_PAR_NONE | UART_CONFIG_STOP_ONE);
+	UARTFIFODisable(UART0_BASE);
+	//UARTFIFOLevelSet(UART0_BASE, UART_FIFO_TX1_8,UART_FIFO_RX1_8);
 //END/////////////Debug//////////////////////////////////////////////////////////////////////////////////
 	
 ///////////////DMX-512-A/////////////////////////////////////////////////////////////////////////////////////	
@@ -112,12 +111,12 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	TimerConfigure(TIMER0_BASE,TIMER_CFG_ONE_SHOT);
 	TimerClockSourceSet(TIMER0_BASE,TIMER_CLOCK_SYSTEM);
 	TimerLoadSet(TIMER0_BASE,TIMER_A,TimeDebug1);//API says to use the Timer A if full width
-	TimerIntEnable(TIMER0_BASE,TIMER_TIMA_TIMEOUT);
 	//IntRegister(INT_TIMER0A, UART0Handler);
 //	IntRegister(INT_UART0, UART0Handler);
 //	TimerIntRegister(TIMER0_BASE,TIMER_BOTH,TIMER0A_Handler);
 //END TIMER//
-
+	HIndex = 0;
+	TIndex = 0;	
 
 	return;
 }
@@ -155,45 +154,57 @@ int main(void)
 {
     U32 lfsr = 0xACE1u;/* Any nonzero start state will work. */
     U32	Time;
+	S16 TempCh;
+	U16 RxBufpt;
 	unsigned bit;
 		// Display greeting
 	GPIOPinWrite(GPIOF_BASE, GPIO_PIN_1, 0xFF);//Write to the pins
 	printf("\r\nHello World\r\n");	
 	Semaphore = 0;
-//	UARTIntEnable(UART1_BASE,UART_INT_RX);
-//	IntEnable(INT_UART1);
+	UARTIntEnable(UART0_BASE,UART_INT_RX);
+	TimerIntEnable(TIMER0_BASE,TIMER_TIMA_TIMEOUT);
+	
+	IntEnable(INT_UART0);
 	IntEnable(INT_TIMER0A);
 	
 	IntMasterEnable();
-	//IntMasterEnable
-	//OldTime = TimeLaps;
+
 	Time = SysCtlClockGet();
 	TimerEnable(TIMER0_BASE, TIMER_BOTH);
 	printf("The Clock is set to %d\r\n",Time);
 	//printf("The tick counter then is %f\r\n",1.0);
+	RngFlush(&RxBufpt);
 	while(1)
 	{
 		// Turn on the LED
-		
-//		TimeLaps = TimerValueGet(TIMER0_BASE,TIMER_A);
 	
 		if(	Semaphore != 0)
 		{	
-		//printf("\t\t%08X\t%01X\r\n",TimeLaps,Semaphore);
 			TimerEnable(TIMER0_BASE, TIMER_BOTH);
 			Semaphore = 0;
-//			Delta = OldTime - TimeLaps;
-//			OldTime = TimeLaps;
+
 			GPIOPinWrite(GPIOF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3, lfsr);//Write to the pins
-			// Delay for a bit
-			//SysCtlDelay(1000000);
+			
 			/* taps: 16 14 13 11; feedback polynomial: x^16 + x^14 + x^13 + x^11 + 1 */
 			//x^32,x^22,x^2,x^1
 			bit  = ((lfsr >> 0) ^ (lfsr >> 10) ^ (lfsr >> 30) ) & 1;
 			
 			lfsr =  (lfsr >> 1) | (bit << 15);
-		//	printf("%04X\t%08X\r\n",lfsr,OldTime);
-			
+		}
+		
+		TempCh = RngGet(&RxBufpt);
+	
+		if(TempCh != EOF)
+		{
+			if((U8)TempCh == '\r')
+			{
+				printf("\r\n");
+			}
+			else
+			{
+				printf("%c",(U8)TempCh);
+			}
 		}
 	}
+	//Should never end up here
 }

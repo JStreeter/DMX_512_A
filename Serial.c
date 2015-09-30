@@ -14,23 +14,13 @@
 #include <stdio.h>
 #include "globals.h"
 
-#define MAXRINGBUFSIZE	1024
-
-U8			UartRingBuffer[MAXRINGBUFSIZE]; //Max length of NEMA sentece is 80 and the max STX is 154
-U16			HIndex = 0, TIndex = 0;			//Internal Indexs
+volatile U8			UartRingBuffer[MAXRINGBUFSIZE]; //Max length of NEMA sentece is 80 and the max STX is 154
+volatile U16			HIndex, TIndex;			//Internal Indexs
 volatile U8 TxReady;
 
-void RngAdd(U8 NewData);
 /*----------------------------------------------------------------------------
   Write character to Serial Port
  *----------------------------------------------------------------------------*/
-// void UART1_Handler()
-// {
-//	static unsigned char Foo;
-//	UARTIntClear(UART1_BASE,UART_INT_RX);
-//	Foo = UART1->DR;
-//	UART1->DR = Foo;
-// }
  /// @fn      void Uart0_ISR()
 /// @author  Jonathan Streeter
 /// @date    1/21/2014
@@ -40,18 +30,19 @@ void RngAdd(U8 NewData);
 ////////////////////////////////////////////////////////////////////////////////
  void UART1_Handler()
 {
-	
+	U8 Foo;
 	if (UART1->RIS & UART_RIS_RXRIS)				//Got a Byte of Data?//RX IF
 	{
 		
 		UARTIntClear(UART1_BASE,UART_INT_RX);			//Clear Flag
-		RngAdd(UART1->DR);		//Yes this is all it does	//A
+		//RngAdd(UART1->DR);		//Yes this is all it does	//A
+		Foo = UART1->DR;
 		//Set A gloabal flag that bits have been inserted.
 	}
 
-	if (UART1->RIS & UART_RIS_TXRIS)//Tx IF
-	{
-		UART1->ICR |= UART_INT_TX;
+//	if (UART1->RIS & UART_RIS_TXRIS)//Tx IF
+//	{
+//		UART1->ICR |= UART_INT_TX;
 		//FIX THIS
 		//FIX THIS//FIX THIS
 		//FIX THIS//FIX THIS//FIX THIS
@@ -65,12 +56,22 @@ void RngAdd(U8 NewData);
 ////////////		{
 ////////////			TxReady = 1;	//Set a global Bit indicating that the TX buffer is ready to receive another byte
 ////////////		}
+//	}
+
+	return;
+}
+
+ void UART0_Handler()
+{
+	if (UART0->RIS & UART_RIS_RXRIS)				//Got a Byte of Data?//RX IF
+	{
+		UARTIntClear(UART0_BASE,UART_INT_RX);			//Clear Flag
+		RngAdd(UART0->DR);		//Yes this is all it does	//A
 	}
 
 	return;
 }
 ///////////////////////////////////////////////////////// 
- 
 
 /* FILE is typedef’d in stdio.h. */
 
@@ -122,13 +123,13 @@ void RngAdd(U8 NewData)
 S16 RngGet(U16 *LocalTailIndex)
 {
 	S16 RTV = EOF;
-
+	//printf("\r\n------> %d <------\r\n",*LocalTailIndex);
 	if (*LocalTailIndex != HIndex)				//Not Matching
 	{
 		RTV = UartRingBuffer[*LocalTailIndex];	//Grab data
 		*LocalTailIndex = (*LocalTailIndex + 1) % MAXRINGBUFSIZE;	//increament and check for overflow
 	}
-
+	
 	return (RTV);	//Will be 0xFFFF if no new char was aquired
 }
 

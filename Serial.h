@@ -15,7 +15,7 @@
 
 #ifndef SERIAL_H
 #define SERIAL_H
-
+#include "globals.h"
 struct __FILE
 {
   int handle;
@@ -25,9 +25,17 @@ struct __FILE
   //Does not look like I need more
 };
 
-extern void SER_Initialize(void);
-extern int  SER_GetChar   (void);
-extern int  SER_PutChar   (int c);
+#define MAXRINGBUFSIZE	1024
+
+extern volatile U8	UartRingBuffer[MAXRINGBUFSIZE]; //Max length of NEMA sentece is 80 and the max STX is 154
+extern volatile U16	HIndex, TIndex;			//Internal Indexs
+extern volatile U8 	TxReady;
+
+extern void RngAdd(U8 NewData);//Adds to a Global Buffer
+extern S16 	RngGet(U16 *LocalTailIndex);//Pulls from the buffer
+extern void RngFlush(U16 *LocalTailIndex);//Flush the local Buffer
+extern U16 	RngDataUsed(U16 *LocalTailIndexPeek);//DEBUG
+extern void UartWrite(U8 *DataToSend, U16 Length);//Blocking write of data pack. Data to send then Length. Raw Data
 
 
 #endif
