@@ -19,7 +19,7 @@
 #include "inc/hw_types.h"
 #include "inc/hw_flash.h"
 #include "inc/hw_timer.h"
-//#include "inc/hw_interrupt.h"
+#include "inc/hw_gpio.h"
 
 #include "driverlib/interrupt.h"
 #include "driverlib/cpu.h"
@@ -44,7 +44,8 @@ FILE __stdout;
 ////////////////////////////////////////////////////////////////////////////////
 	//  CONSTANTS
 ////////////////////////////////////////////////////////////////////////////////
-
+#define PULSETEST      (*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 1*4)))
+ 
 ////////////////////////////////////////////////////////////////////////////////
 	// FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////
@@ -58,6 +59,7 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	//Perhial Clock enable
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);//UART0Pins
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);//UART1Pins
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);//Leds Push Buttons
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);//Leds Push Buttons
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);//A0,A1
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_UART1);//B0,B1
@@ -69,6 +71,9 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
     SYSCTL->GPIOHBCTL = 0;
 
     // Configure LED and pushbutton pins
+	GPIOPadConfigSet(GPIOE_BASE,GPIO_PIN_3,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
+	GPIODirModeSet(GPIOE_BASE,GPIO_PIN_3,GPIO_DIR_MODE_OUT);
+	
 	//Leds First
     GPIOPadConfigSet(GPIOF_BASE,GPIO_PIN_1 | GPIO_PIN_2| GPIO_PIN_3,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
 	GPIODirModeSet(GPIOF_BASE,GPIO_PIN_1 | GPIO_PIN_2| GPIO_PIN_3,GPIO_DIR_MODE_OUT);
@@ -117,24 +122,11 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 //END TIMER//
 	HIndex = 0;
 	TIndex = 0;	
-
+	
+	//HWREGBITW(GPIOE_BASE+GPIO_O_DATA,3) = 1;
 	return;
 }
-// Blocking function that writes a serial character when the UART buffer is not full
-//void putcUart1(char c)
-//{
-//	while (UART1->FR & UART_FR_TXFF);//<<<<<<-------------------------------------------WHILE!!!!
-//	UART1->DR = c;
-//}
-// Blocking function that writes a string when the UART buffer is not full
-//void putsUart1(char* str)
-//{
-//	int i;
-//    for (i = 0; i < strlen(str); i++)
-//	{
-//	  fputc(str[i],&__stdout);
-//	 }
-//}
+
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //       @@@@      @@@@      @@@@          @@@@@@@@      @@@@      @@@@       //
@@ -150,6 +142,7 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 // 100uS low 14uS High  -------BREAK___________________MAB--PACKET0+Data1+Data2
 //Minimum Packet is 24 data packets(Add padding)
 ////////////////////////////////////////////////////////////////////////////////
+#define GREEN_LED    (*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 3*4)))
 int main(void)
 {
     U32 lfsr = 0xACE1u;/* Any nonzero start state will work. */
@@ -184,7 +177,37 @@ int main(void)
 			Semaphore = 0;
 
 			GPIOPinWrite(GPIOF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3, lfsr);//Write to the pins
-			
+//			0x40025000 + 0x00000000 , 1*4
+//			 (*((volatile uint32_t *)((((uint32_t)(0x40025000) & 0xF0000000) | 0x02000000 | (((uint32_t)(0x40025000) & 0x000FFFFF) << 5) | ((b) << 2))))) =1 ;
+//#define GREEN_LED    (*((volatile uint32_t *)(0x42 0000 00 + (0x400253FC-0x40000000)*32 + 3*4)))
+//			4273 A012
+//			424A 0018
+			HWREGBITW(GPIOF_BASE + GPIO_O_DATA + 0x3FC,1) = lfsr & 1;
+			HWREGBITW(GPIOF_BASE + GPIO_O_DATA + 0x3FC,2) = (lfsr>>1) & 1;;
+			HWREGBITW(GPIOF_BASE + GPIO_O_DATA + 0x3FC,4) = (lfsr>>2) & 1;
+			HWREGBITW(GPIOE_BASE + GPIO_O_DATA + 0x3FC,8) = (lfsr>>3) & 1;
+
+//			GPIOE->DATA	^= 0xFF;
+			if(Time)
+			{
+				HWREGBITW(GPIOE_BASE + GPIO_O_DATA,0) = 1;
+				HWREGBITW(GPIOE_BASE + GPIO_O_DATA,1) = 1;
+				HWREGBITW(GPIOE_BASE + GPIO_O_DATA,2) = 1;
+				HWREGBITW(GPIOE_BASE + GPIO_O_DATA,4) = 1;
+				HWREGBITW(GPIOE_BASE + GPIO_O_DATA,8) = 1;
+				HWREGBITW(GPIOE_BASE + GPIO_O_DATA,16) = 1;
+			}
+			else
+			{
+				HWREGBITW(GPIOE_BASE + GPIO_O_DATA ,0) = 0;
+				HWREGBITW(GPIOE_BASE + GPIO_O_DATA ,1) = 0;
+				HWREGBITW(GPIOE_BASE + GPIO_O_DATA ,2) = 0;
+				HWREGBITW(GPIOE_BASE + GPIO_O_DATA ,4) = 0;
+				HWREGBITW(GPIOE_BASE + GPIO_O_DATA ,8) = 0;
+				HWREGBITW(GPIOE_BASE + GPIO_O_DATA ,16) = 0;
+			}
+			Time ^= 0xFF;
+//			GREEN_LED = 1;
 			/* taps: 16 14 13 11; feedback polynomial: x^16 + x^14 + x^13 + x^11 + 1 */
 			//x^32,x^22,x^2,x^1
 			bit  = ((lfsr >> 0) ^ (lfsr >> 10) ^ (lfsr >> 30) ) & 1;

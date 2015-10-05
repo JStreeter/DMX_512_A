@@ -14,6 +14,8 @@
 #include "inc/hw_timer.h"
 #include "driverlib/timer.h"
 #include "driverlib/interrupt.h"
+#include "inc/hw_types.h"
+#include "inc/hw_gpio.h"
 #include <stdio.h>
 ////////////////////////////////////////////////////////////////////////////////
 	// EXTERNALS
@@ -32,6 +34,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 void TIMER0A_Handler()
 {
+	//HWREGBITW(GPIOE_BASE + GPIO_O_DATA + 0x3FC,1<<3) = HWREGBITW(GPIOF_BASE + GPIO_O_DATA + 0x3FC,1<<3) ^ 1;
 	TimerIntClear(TIMER0_BASE,TIMER_TIMA_TIMEOUT);//TIMER TIME OUT
 	Semaphore = 1;
 }
