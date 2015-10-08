@@ -149,6 +149,7 @@ int main(void)
     U32	Time;
 	S16 TempCh;
 	U16 RxBufpt;
+	volatile U32 BaseTime = TimeDebug1;
 	unsigned bit;
 		// Display greeting
 	GPIOPinWrite(GPIOF_BASE, GPIO_PIN_1, 0xFF);//Write to the pins
@@ -218,16 +219,67 @@ int main(void)
 		TempCh = RngGet(&RxBufpt);
 	
 		if(TempCh != EOF)
-		{
-			if((U8)TempCh == '\r')
-			{
-				printf("\r\n");
-			}
-			else
-			{
-				printf("%c",(U8)TempCh);
-			}
-		}
+		{/*Call the Parser functions*/}
+//			if((U8)TempCh == '\r')
+//			{
+//				printf("\r\n");
+//			}
+//			
+//			switch((U8)TempCh)
+//			{
+//				case('a'):
+//					BaseTime += 0x10000000;
+//					printf("%X\r\n",BaseTime);
+//					break;
+//				case('A'):
+//					BaseTime -= 0x10000000;
+//					printf("%X\r\n",BaseTime);
+//					break;
+//				case('s'):
+//					BaseTime += 0x100000;
+//					printf("%X\r\n",BaseTime);
+//					break;
+//				case('S'):
+//					BaseTime -= 0x100000;
+//					printf("%X\r\n",BaseTime);
+//					break;
+//				case('d'):
+//					BaseTime += 0x10000;
+//					printf("%X\r\n",BaseTime);
+//					break;
+//				case('D'):
+//					BaseTime -= 0x10000;
+//					printf("%X\r\n",BaseTime);
+//					break;
+//				case('f'):
+//					BaseTime += 0x100;
+//					printf("%X\r\n",BaseTime);
+//					break;
+//				case('F'):
+//					BaseTime -= 0x100;
+//					printf("%X\r\n",BaseTime);
+//					break;
+//				case('g'):
+//					BaseTime += 0x1;
+//					printf("%X\r\n",BaseTime);
+//					break;
+//				case('G'):
+//					BaseTime -= 0x1;
+//					printf("%X\r\n",BaseTime);
+//					break;
+//				case(' '):
+//					printf("Pushed new time \r\n");
+//					TimerLoadSet(TIMER0_BASE,TIMER_A,BaseTime);//API says to use the Timer A if full width
+//					break;
+//				break;
+//				default:
+//				{
+//					printf("%f\r\n",(BaseTime * (1.0/50000000.0)));
+//				}
+//				
+//				
+//			}
+//		}
 	}
 	//Should never end up here
 }

@@ -30,7 +30,7 @@ volatile U8 TxReady;
 ////////////////////////////////////////////////////////////////////////////////
  void UART1_Handler()
 {
-	U8 Foo;
+	volatile U8 Foo;
 	if (UART1->RIS & UART_RIS_RXRIS)				//Got a Byte of Data?//RX IF
 	{
 		
@@ -66,7 +66,7 @@ volatile U8 TxReady;
 	if (UART0->RIS & UART_RIS_RXRIS)				//Got a Byte of Data?//RX IF
 	{
 		UARTIntClear(UART0_BASE,UART_INT_RX);			//Clear Flag
-		RngAdd(UART0->DR);		//Yes this is all it does	//A
+		RngAdd(UART0->DR & 0xFF);		//Yes this is all it does	//A
 	}
 
 	return;
