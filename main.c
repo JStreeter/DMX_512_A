@@ -66,6 +66,8 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);//A0,A1
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_UART1);//B0,B1
 	
+	SysCtlGPIOAHBEnable(SYSCTL_PERIPH_GPIOF);
+	
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);//Timer 0
 
     // Set GPIO ports to use APB (not needed since default configuration -- for clarity)
@@ -154,7 +156,7 @@ int main(void)
     U32 lfsr = 0xACE1u;/* Any nonzero start state will work. */
     U32	Time;
 	U8	Buffer[20];
-	U8	Rand;
+	U8	Rand,Rand2;
 	S16 TempCh;
 	U16 RxBufpt;
 	volatile U32 BaseTime = TimeDebug1;
@@ -205,12 +207,11 @@ int main(void)
 
 		
 		Buffer[0] = Rand;
-		Buffer[1] = IO_Ex_0_IODIRA;
-		Buffer[2] = 0;
+		Buffer[1] = (U8)lfsr;//IO_Ex_0_IODIRA;
 //		GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0);//Write to the pins
 		ExIO(Buffer,2);
 //		GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0xFF);//Write to the pins
-		printf("%02X| %02X %02X %02X\r\n",Rand, Buffer[0], Buffer[1], Buffer[2]);
+		printf("%02X %02X| %02X %02X %02X\r\n",Rand,(U8)lfsr, Buffer[0], Buffer[1], Buffer[2]);
 		
 		if(Buffer[1] != 0)
 		{
