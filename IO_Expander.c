@@ -6,7 +6,8 @@
 //#include "inc/hw_ints.h"
 //#include "inc/hw_nvic.h"
 #include "inc/hw_sysctl.h"
-//#include "inc/hw_types.h"
+#include "inc/hw_types.h"
+#include "inc/hw_ssi.h"
 //#include "inc/hw_flash.h"
 //#include "inc/hw_timer.h"
 #include "inc/hw_gpio.h"
@@ -15,9 +16,9 @@
 //#include "driverlib/debug.h"
 #include "driverlib/interrupt.h"
 #include "driverlib/sysctl.h"
-//#include "driverlib/gpio.h"
+#include "driverlib/gpio.h"
 //#include "driverlib/uart.h"
-//#include "driverlib/pin_map.h"
+#include "driverlib/pin_map.h"
 //#include "driverlib/timer.h"
 #include "driverlib/ssi.h"
 #include "driverlib/udma.h"
@@ -25,32 +26,58 @@
 
  void SSI3_Handler()
  {
- 
+	
+	
+	return;
  }
  
- void Spi_Blk(U8 *BuffIn,U8 *BuffOut,U16 Length, U8 Device)
+ void UDMA_Handler()
  {
-	SSIDMAEnable(SSI3_BASE, SSI_DMA_RX | SSI_DMA_TX);
+	
+	
+	return;
+ }
+ void Spi_Blk(U8 *BuffOut,U8 *BuffIn,U16 Length, U8 Device)
+ {
+//	SSIDMAEnable(SSI3_BASE, SSI_DMA_RX | SSI_DMA_TX);
+	U16 index = 0;
+	do
+	{
+		SSIDataPut(SSI3_BASE,(U32)BuffOut[index]);
+		while(SSIBusy(SSI3_BASE));
+		//BuffIn[index] = (U8)HWREG(SSI3_BASE + SSI_O_DR);
+		SSIDataGet(SSI3_BASE,(U32*)&BuffIn[index]);
+	}while(index++ < Length);
 
-
-
-
-	SSIDMADisable(SSI3_BASE,SSI_DMA_RX | SSI_DMA_TX);
+//	SSIDMADisable(SSI3_BASE,SSI_DMA_RX | SSI_DMA_TX);
 	return;
  }
  
  void SpiSetup()
  {
+    // Enable the SSI0 peripheral
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI3);
+ 
+    // The SSI0 peripheral is on Port A and pins 2,3,4 and 5.
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
+ 
+    GPIOPinConfigure(GPIO_PD0_SSI3CLK);
+    GPIOPinConfigure(GPIO_PD1_SSI3FSS);
+    GPIOPinConfigure(GPIO_PD2_SSI3RX);//MISO
+    GPIOPinConfigure(GPIO_PD3_SSI3TX);//MOSI
+ 
+    // Configures the pins for use by the SSI, takes 2 parameters
+    GPIOPinTypeSSI(GPIOD_BASE, GPIO_PIN_3 | GPIO_PIN_2 | GPIO_PIN_1 | GPIO_PIN_0);
+
 	SSIClockSourceSet(SSI3_BASE, SSI_CLOCK_SYSTEM);
-	SSIConfigSetExpClk(SSI3_BASE, SysCtlClockGet(),	SSI_FRF_MOTO_MODE_0, SSI_MODE_MASTER, SysCtlClockGet() / 16, 8);
+	SSIConfigSetExpClk(SSI3_BASE, SysCtlClockGet(),	SSI_FRF_MOTO_MODE_0, SSI_MODE_MASTER, SysCtlClockGet() / 128, 8);
 	SSIAdvModeSet(SSI3_BASE, SSI_ADV_MODE_LEGACY);
-	
 	
 	SSIEnable(SSI3_BASE);
 	return;
  }
  
- void DMA()
+ void DMA_Setup()
  {
 //	//
 //// The application must allocate the channel control table. This one is a

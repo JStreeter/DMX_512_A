@@ -32,6 +32,7 @@
 #include "driverlib/timer.h"
 #include <string.h>
 
+#include "IO_Expander.h"
 ////////////////////////////////////////////////////////////////////////////////
 	// EXTERNALS
 ////////////////////////////////////////////////////////////////////////////////
@@ -59,6 +60,7 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	//Perhial Clock enable
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);//UART0Pins
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);//UART1Pins
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);//UART1Pins
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);//Leds Push Buttons
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);//Leds Push Buttons
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);//A0,A1
@@ -73,7 +75,9 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
     // Configure LED and pushbutton pins
 	GPIOPadConfigSet(GPIOE_BASE,GPIO_PIN_3,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
 	GPIODirModeSet(GPIOE_BASE,GPIO_PIN_3,GPIO_DIR_MODE_OUT);
-	
+	//CCS
+	GPIOPadConfigSet(GPIOD_BASE,GPIO_PIN_1,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
+	GPIODirModeSet(GPIOD_BASE,GPIO_PIN_1,GPIO_DIR_MODE_OUT);
 	//Leds First
     GPIOPadConfigSet(GPIOF_BASE,GPIO_PIN_1 | GPIO_PIN_2| GPIO_PIN_3,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
 	GPIODirModeSet(GPIOF_BASE,GPIO_PIN_1 | GPIO_PIN_2| GPIO_PIN_3,GPIO_DIR_MODE_OUT);
@@ -120,6 +124,8 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 //	IntRegister(INT_UART0, UART0Handler);
 //	TimerIntRegister(TIMER0_BASE,TIMER_BOTH,TIMER0A_Handler);
 //END TIMER//
+
+	SpiSetup();
 	HIndex = 0;
 	TIndex = 0;	
 	
@@ -147,6 +153,8 @@ int main(void)
 {
     U32 lfsr = 0xACE1u;/* Any nonzero start state will work. */
     U32	Time;
+	U8	Buffer[20];
+	U8	Rand;
 	S16 TempCh;
 	U16 RxBufpt;
 	volatile U32 BaseTime = TimeDebug1;
@@ -168,27 +176,59 @@ int main(void)
 	printf("The Clock is set to %d\r\n",Time);
 	//printf("The tick counter then is %f\r\n",1.0);
 	RngFlush(&RxBufpt);
+	Buffer[0] = IO_Ex_Write;
+	Buffer[1] = IO_Ex_0_GPPUA;
+	Buffer[2] = 0xFF;
+	ExIO(Buffer,3);
 	while(1)
 	{
-		// Turn on the LED
-	
+//		Buffer[0] = 0xFF;
+//		Buffer[1] = 0xFF;
+//		Buffer[2] = 0xFF;
+//		Buffer[3] = 0xFF;
+//		Buffer[4] = 0xFF;
+//		Buffer[5] = 0xFF;
+//		Buffer[6] = 0xFF;
+//		Buffer[7] = 0xFF;
+//		Buffer[8] = 0xFF;
+//		Buffer[0] = 0x00;
+//		Buffer[1] = 0x00;
+//		Buffer[2] = 0x00;
+//		Buffer[3] = 0x00;
+//		Buffer[4] = 0x00;
+//		Buffer[5] = 0x00;
+//		Buffer[6] = 0x00;
+//		Buffer[7] = 0x00;
+//		Buffer[8] = 0x00;
+//		ExIO(Buffer,9);
+
+
+		
+		Buffer[0] = Rand;
+		Buffer[1] = IO_Ex_0_IODIRA;
+		Buffer[2] = 0;
+//		GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0);//Write to the pins
+		ExIO(Buffer,2);
+//		GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0xFF);//Write to the pins
+		printf("%02X| %02X %02X %02X\r\n",Rand, Buffer[0], Buffer[1], Buffer[2]);
+		
+		if(Buffer[1] != 0)
+		{
+			while(1);
+		}
+		Rand++;
 		if(	Semaphore != 0)
 		{	
 			TimerEnable(TIMER0_BASE, TIMER_BOTH);
 			Semaphore = 0;
 
 			GPIOPinWrite(GPIOF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3, lfsr);//Write to the pins
-//			0x40025000 + 0x00000000 , 1*4
-//			 (*((volatile uint32_t *)((((uint32_t)(0x40025000) & 0xF0000000) | 0x02000000 | (((uint32_t)(0x40025000) & 0x000FFFFF) << 5) | ((b) << 2))))) =1 ;
-//#define GREEN_LED    (*((volatile uint32_t *)(0x42 0000 00 + (0x400253FC-0x40000000)*32 + 3*4)))
-//			4273 A012
-//			424A 0018
+
 			HWREGBITW(GPIOF_BASE + GPIO_O_DATA + 0x3FC,1) = lfsr & 1;
 			HWREGBITW(GPIOF_BASE + GPIO_O_DATA + 0x3FC,2) = (lfsr>>1) & 1;;
 			HWREGBITW(GPIOF_BASE + GPIO_O_DATA + 0x3FC,4) = (lfsr>>2) & 1;
 			HWREGBITW(GPIOE_BASE + GPIO_O_DATA + 0x3FC,8) = (lfsr>>3) & 1;
 
-//			GPIOE->DATA	^= 0xFF;
 			if(Time)
 			{
 				HWREGBITW(GPIOE_BASE + GPIO_O_DATA,0) = 1;
@@ -217,7 +257,7 @@ int main(void)
 		}
 		
 		TempCh = RngGet(&RxBufpt);
-	
+
 		if(TempCh != EOF)
 		{/*Call the Parser functions*/}
 //			if((U8)TempCh == '\r')
