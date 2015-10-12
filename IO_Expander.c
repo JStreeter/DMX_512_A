@@ -172,7 +172,7 @@
 	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0x00);//Write to the pins
 	ExIO(Buffer,2);
 	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0xFF);//Write to the pins
-	RV = (Buffer[1] >> 7) & 0x01FF;
+	RV = (Buffer[1] >> 8) & 0x01FF;
 	return RV;
  }
  
@@ -180,7 +180,7 @@
  {
 	U16 Buffer[3];
 	Buffer[0] = IO_Ex_Write | IO_Ex_0_OLATA;// IO_Ex_0_IODIRA;		
-	Buffer[1] =  ((output) & 0x007F) | 0xFF80;
+	Buffer[1] =  ((~output) & 0x007F) | 0xFF80;
 	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0x00);//Write to the pins
 	ExIO(Buffer,2);
 	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0xFF);//Write to the pins

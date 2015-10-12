@@ -43,7 +43,7 @@ FILE __stdout;
 ////////////////////////////////////////////////////////////////////////////////
 	// GLOBALS
 ////////////////////////////////////////////////////////////////////////////////
-
+//C4-C7
 ////////////////////////////////////////////////////////////////////////////////
 	//  CONSTANTS
 ////////////////////////////////////////////////////////////////////////////////
@@ -79,6 +79,7 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
     // Configure LED and pushbutton pins
 	GPIOPadConfigSet(GPIOE_BASE,GPIO_PIN_3,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
 	GPIODirModeSet(GPIOE_BASE,GPIO_PIN_3,GPIO_DIR_MODE_OUT);
+	
 	//CCS
 	GPIOPadConfigSet(GPIOD_BASE,GPIO_PIN_1,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
 	GPIODirModeSet(GPIOD_BASE,GPIO_PIN_1,GPIO_DIR_MODE_OUT);
@@ -158,9 +159,9 @@ int main(void)
 {
     U32 lfsr = 0xACE1u;/* Any nonzero start state will work. */
     U32	Time;
-	U16	Out,In;
-	U8	Rand, Rand2, ReadTemp;
-	S16 TempCh;
+	U16	In;
+//	U8	Rand, Rand2, ReadTemp;
+//	S16 TempCh;
 	U16 RxBufpt;
 	volatile U32 BaseTime = TimeDebug1;
 	unsigned bit;
@@ -168,6 +169,7 @@ int main(void)
 	GPIOPinWrite(GPIOF_BASE, GPIO_PIN_1, 0xFF);//Write to the pins
 	printf("\r\nHello World\r\n");	
 	Semaphore = 0;
+	while(GPIOPinRead(GPIOF_BASE, GPIO_PIN_4));//Wait of user
 	UARTIntEnable(UART0_BASE,UART_INT_RX);
 	SSIIntEnable(SSI3_BASE,SSI_RXFF);
 	TimerIntEnable(TIMER0_BASE,TIMER_TIMA_TIMEOUT);
@@ -182,15 +184,17 @@ int main(void)
 	printf("The Clock is set to %d\r\n",Time);
 	//printf("The tick counter then is %f\r\n",1.0);
 	RngFlush(&RxBufpt);
-	Rand = 0;
-	ReadTemp =  0;
 	
+	
+//	Rand = 0;
+//	ReadTemp =  0;
+//	
 	while(1)
 	{
 		In =  ReadAddessEXIO();
 		printf("In = %03X \r\n",In);
 		
-		WriteOutIOEX(lfsr);
+		WriteOutIOEX(lfsr | In);
 		
 		if(	Semaphore != 0)
 		{	
@@ -198,7 +202,7 @@ int main(void)
 			Semaphore = 0;
 			/* taps: 16 14 13 11; feedback polynomial: x^16 + x^14 + x^13 + x^11 + 1 */
 			//x^32,x^22,x^2,x^1
-			bit  = ((lfsr >> 0) ^ (lfsr >> 10) ^ (lfsr >> 30) ) & 1;
+			bit  = ((lfsr >> 0) ^ (lfsr >> 2) ^ (lfsr >> 3) ^ (lfsr >> 5) ) & 1;
 			
 			lfsr =  (lfsr >> 1) | (bit << 15);
 		}

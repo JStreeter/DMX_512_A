@@ -462,6 +462,11 @@
               <FileType>5</FileType>
               <FilePath>.\globals.h</FilePath>
             </File>
+            <File>
+              <FileName>IO_Expander.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\IO_Expander.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
