@@ -79,14 +79,7 @@ volatile U8 TxReady;
 int fputc(int ch, FILE *f) 
 {
 	/* Your implementation of fputc(). */
-	static U8 FlipFlop;
-	while (UART0->FR & UART_FR_TXFF)
-	{
-		if((FlipFlop++ % 8) == 0)
-			GPIOPinWrite(GPIOF_BASE,GPIO_PIN_1 | GPIO_PIN_2| GPIO_PIN_3,0xFF);
-		else
-			GPIOPinWrite(GPIOF_BASE,GPIO_PIN_1 | GPIO_PIN_2| GPIO_PIN_3,0x00);
-	}//<<<<<<-------------------------------------------WHILE!!!!
+	while (UART0->FR & UART_FR_TXFF);//<<<<<<-------------------------------------------WHILE!!!!
 	UART0->DR = ch;
   return ch;
 }

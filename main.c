@@ -159,7 +159,7 @@ int main(void)
 {
     U32 lfsr = 0xACE1u;/* Any nonzero start state will work. */
     U32	Time;
-	U16	In;
+	U16	In,Old;
 //	U8	Rand, Rand2, ReadTemp;
 	S16 TempCh;
 	U16 RxBufpt;
@@ -167,8 +167,7 @@ int main(void)
 	unsigned bit;
 		// Display greeting
 	GPIOPinWrite(GPIOF_BASE, GPIO_PIN_1, 0xFF);//Write to the pins
-	printf("\r\nHello World\r\n");	
-	printf("The Clock is set to %d\r\n",Time);
+	
 	Semaphore = 0;
 	
 	UARTIntEnable(UART0_BASE,UART_INT_RX);
@@ -185,17 +184,24 @@ int main(void)
 	
 	//printf("The tick counter then is %f\r\n",1.0);
 	RngFlush(&RxBufpt);
+	
+	printf("\r\nHello World\r\n");	
+	printf("The Clock is set to %d\r\n",Time);
 	while(GPIOPinRead(GPIOF_BASE, GPIO_PIN_4));//Wait of user
 	
 //	Rand = 0;
 //	ReadTemp =  0;
-	
+	Old = 0;
 //	DMA_Setup_UART1();
 	while(1)
 	{	
 		In =  ReadAddessEXIO();
-		//printf("In = %03X \r\n",In);
-		printf("Hello World\r\n");
+		if(Old != In)
+		{
+			printf("In = %03X \r\n",In);
+			Old = In;
+		}
+		
 		WriteOutIOEX(lfsr | In);
 		
 		if(	Semaphore != 0)
