@@ -20,6 +20,7 @@
 #include "inc/hw_flash.h"
 #include "inc/hw_timer.h"
 #include "inc/hw_gpio.h"
+#include "inc/hw_ssi.h"
 
 #include "driverlib/interrupt.h"
 #include "driverlib/cpu.h"
@@ -30,6 +31,7 @@
 #include "driverlib/uart.h"
 #include "driverlib/pin_map.h"
 #include "driverlib/timer.h"
+#include "driverlib/ssi.h"
 #include <string.h>
 
 #include "IO_Expander.h"
@@ -126,7 +128,8 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 //	IntRegister(INT_UART0, UART0Handler);
 //	TimerIntRegister(TIMER0_BASE,TIMER_BOTH,TIMER0A_Handler);
 //END TIMER//
-
+	IntPrioritySet(INT_UART0, 0x05);
+	IntPrioritySet(INT_SSI3, 0x10);
 	SpiSetup();
 	HIndex = 0;
 	TIndex = 0;	
@@ -153,19 +156,20 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 #define GREEN_LED    (*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 3*4)))
 int main(void)
 {
-    U32 lfsr = 0xACE1u;/* Any nonzero start state will work. */
+//    U32 lfsr = 0xACE1u;/* Any nonzero start state will work. */
     U32	Time;
-	U8	Buffer[20];
+	U16	Buffer[40];
 	U8	Rand,Rand2;
 	S16 TempCh;
 	U16 RxBufpt;
 	volatile U32 BaseTime = TimeDebug1;
-	unsigned bit;
+//	unsigned bit;
 		// Display greeting
 	GPIOPinWrite(GPIOF_BASE, GPIO_PIN_1, 0xFF);//Write to the pins
 	printf("\r\nHello World\r\n");	
 	Semaphore = 0;
 	UARTIntEnable(UART0_BASE,UART_INT_RX);
+	SSIIntEnable(SSI3_BASE,SSI_RXFF);
 	TimerIntEnable(TIMER0_BASE,TIMER_TIMA_TIMEOUT);
 	
 	IntEnable(INT_UART0);
@@ -178,149 +182,192 @@ int main(void)
 	printf("The Clock is set to %d\r\n",Time);
 	//printf("The tick counter then is %f\r\n",1.0);
 	RngFlush(&RxBufpt);
-	Buffer[0] = IO_Ex_Write;
-	Buffer[1] = IO_Ex_0_GPPUA;
-	Buffer[2] = 0xFF;
-	ExIO(Buffer,3);
+//	Buffer[0] = IO_Ex_Write;
+//	Buffer[1] = IO_Ex_0_GPPUA;
+//	Buffer[2] = 0xFF;
+//	ExIO(Buffer,3);
+//	
+//	Buffer[0] = IO_Ex_Write;
+//	Buffer[1] = IO_Ex_0_GPPUB;
+//	Buffer[2] = 0x00;
+//	ExIO(Buffer,3);
+//	
+//	
+//	Buffer[0] = IO_Ex_Write;
+//	Buffer[1] = IO_Ex_0_IODIRB;
+//	Buffer[2] = 0x80;
+//	ExIO(Buffer,3);
+	while(GPIOPinRead(GPIOF_BASE, GPIO_PIN_4));
+	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0xFF);//Write to the pins
+	Rand = 0;
+	
+	Buffer[0] = IO_Ex_Write | IO_Ex_0_GPPUA;
+//	Buffer[1] = IO_Ex_0_GPPUA;			
+	Buffer[1] = 0xFFFF;
+	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0x00);//Write to the pins
+	ExIO(Buffer,2);
+	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0xFF);//Write to the pins
+	
+	Buffer[0] = IO_Ex_Write | IO_Ex_0_IODIRA;
+	//Buffer[1] = IO_Ex_0_IODIRA;			
+	Buffer[1] = 0x5AA5;
+	//Buffer[2] = 0xA5;
+	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0x00);//Write to the pins
+	ExIO(Buffer,2);
+	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0xFF);//Write to the pins
+	
 	while(1)
 	{
-//		Buffer[0] = 0xFF;
-//		Buffer[1] = 0xFF;
-//		Buffer[2] = 0xFF;
-//		Buffer[3] = 0xFF;
-//		Buffer[4] = 0xFF;
-//		Buffer[5] = 0xFF;
-//		Buffer[6] = 0xFF;
-//		Buffer[7] = 0xFF;
-//		Buffer[8] = 0xFF;
-//		Buffer[0] = 0x00;
-//		Buffer[1] = 0x00;
-//		Buffer[2] = 0x00;
-//		Buffer[3] = 0x00;
-//		Buffer[4] = 0x00;
-//		Buffer[5] = 0x00;
-//		Buffer[6] = 0x00;
-//		Buffer[7] = 0x00;
-//		Buffer[8] = 0x00;
-//		ExIO(Buffer,9);
-
-
 		
-		Buffer[0] = Rand;
-		Buffer[1] = (U8)lfsr;//IO_Ex_0_IODIRA;
-//		GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0);//Write to the pins
+//		Buffer[0] = IO_Ex_Write;
+//		Buffer[1] = IO_Ex_0_OLATB;//IO_Ex_0_IODIRA;
+//		Buffer[2] = (U8)lfsr;//IO_Ex_0_IODIRA;
+//		ExIO(Buffer,3);
+		Buffer[0] = IO_Ex_Write | IO_Ex_0_IODIRA;
+		//Buffer[1] = IO_Ex_0_IODIRA;			
+		Buffer[1] = Rand;
+		//Buffer[2] = 0xA5;
+		GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0x00);//Write to the pins
 		ExIO(Buffer,2);
-//		GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0xFF);//Write to the pins
-		printf("%02X %02X| %02X %02X %02X\r\n",Rand,(U8)lfsr, Buffer[0], Buffer[1], Buffer[2]);
+		GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0xFF);//Write to the pins
+	
+//		
+//		Buffer[0] = IO_Ex_Read | Rand;
+////		Buffer[1] = 0xA5A4;
+//		Buffer[1] = 0x5A4A;
+//		
 		
-		if(Buffer[1] != 0)
-		{
-			while(1);
-		}
-		Rand++;
-		if(	Semaphore != 0)
-		{	
-			TimerEnable(TIMER0_BASE, TIMER_BOTH);
-			Semaphore = 0;
-
-			GPIOPinWrite(GPIOF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3, lfsr);//Write to the pins
-
-			HWREGBITW(GPIOF_BASE + GPIO_O_DATA + 0x3FC,1) = lfsr & 1;
-			HWREGBITW(GPIOF_BASE + GPIO_O_DATA + 0x3FC,2) = (lfsr>>1) & 1;;
-			HWREGBITW(GPIOF_BASE + GPIO_O_DATA + 0x3FC,4) = (lfsr>>2) & 1;
-			HWREGBITW(GPIOE_BASE + GPIO_O_DATA + 0x3FC,8) = (lfsr>>3) & 1;
-
-			if(Time)
-			{
-				HWREGBITW(GPIOE_BASE + GPIO_O_DATA,0) = 1;
-				HWREGBITW(GPIOE_BASE + GPIO_O_DATA,1) = 1;
-				HWREGBITW(GPIOE_BASE + GPIO_O_DATA,2) = 1;
-				HWREGBITW(GPIOE_BASE + GPIO_O_DATA,4) = 1;
-				HWREGBITW(GPIOE_BASE + GPIO_O_DATA,8) = 1;
-				HWREGBITW(GPIOE_BASE + GPIO_O_DATA,16) = 1;
-			}
-			else
-			{
-				HWREGBITW(GPIOE_BASE + GPIO_O_DATA ,0) = 0;
-				HWREGBITW(GPIOE_BASE + GPIO_O_DATA ,1) = 0;
-				HWREGBITW(GPIOE_BASE + GPIO_O_DATA ,2) = 0;
-				HWREGBITW(GPIOE_BASE + GPIO_O_DATA ,4) = 0;
-				HWREGBITW(GPIOE_BASE + GPIO_O_DATA ,8) = 0;
-				HWREGBITW(GPIOE_BASE + GPIO_O_DATA ,16) = 0;
-			}
-			Time ^= 0xFF;
-//			GREEN_LED = 1;
-			/* taps: 16 14 13 11; feedback polynomial: x^16 + x^14 + x^13 + x^11 + 1 */
-			//x^32,x^22,x^2,x^1
-			bit  = ((lfsr >> 0) ^ (lfsr >> 10) ^ (lfsr >> 30) ) & 1;
-			
-			lfsr =  (lfsr >> 1) | (bit << 15);
-		}
-		
-		TempCh = RngGet(&RxBufpt);
-
-		if(TempCh != EOF)
-		{/*Call the Parser functions*/}
-//			if((U8)TempCh == '\r')
-//			{
-//				printf("\r\n");
-//			}
-//			
-//			switch((U8)TempCh)
-//			{
-//				case('a'):
-//					BaseTime += 0x10000000;
-//					printf("%X\r\n",BaseTime);
-//					break;
-//				case('A'):
-//					BaseTime -= 0x10000000;
-//					printf("%X\r\n",BaseTime);
-//					break;
-//				case('s'):
-//					BaseTime += 0x100000;
-//					printf("%X\r\n",BaseTime);
-//					break;
-//				case('S'):
-//					BaseTime -= 0x100000;
-//					printf("%X\r\n",BaseTime);
-//					break;
-//				case('d'):
-//					BaseTime += 0x10000;
-//					printf("%X\r\n",BaseTime);
-//					break;
-//				case('D'):
-//					BaseTime -= 0x10000;
-//					printf("%X\r\n",BaseTime);
-//					break;
-//				case('f'):
-//					BaseTime += 0x100;
-//					printf("%X\r\n",BaseTime);
-//					break;
-//				case('F'):
-//					BaseTime -= 0x100;
-//					printf("%X\r\n",BaseTime);
-//					break;
-//				case('g'):
-//					BaseTime += 0x1;
-//					printf("%X\r\n",BaseTime);
-//					break;
-//				case('G'):
-//					BaseTime -= 0x1;
-//					printf("%X\r\n",BaseTime);
-//					break;
-//				case(' '):
-//					printf("Pushed new time \r\n");
-//					TimerLoadSet(TIMER0_BASE,TIMER_A,BaseTime);//API says to use the Timer A if full width
-//					break;
-//				break;
-//				default:
-//				{
-//					printf("%f\r\n",(BaseTime * (1.0/50000000.0)));
-//				}
-//				
-//				
-//			}
+			//for(Rand2 = 2; )
+//		if((Rand % 2) == 0)
+//		{		
+//			Buffer[1] = 0x00;//IO_Ex_0_IODIRA;
 //		}
+//		else
+//		{3
+//			Buffer[1] = 0xFF;//IO_Ex_0_IODIRA;
+//		}
+//		
+		
+		GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0x00);//Write to the pins
+		ExIO(Buffer,2);
+		GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0xFF);//Write to the pins
+	
+		//printf("%02X %02X| %02X %02X %02X\r\n",Rand,(U8)lfsr, Buffer[0], Buffer[1], Buffer[2]);
+		printf("%02X | ",Rand);
+		for(Rand2 = 1;Rand2 < 2;Rand2++)
+			printf("%04X ",Buffer[Rand2]);
+		printf("\r\n");
+		//printf("%02X %02X %02X\r\n",Buffer[0], Buffer[1], Buffer[2]);
+
+		while(GPIOPinRead(GPIOF_BASE, GPIO_PIN_4));
+		Rand++;
+		while(!GPIOPinRead(GPIOF_BASE, GPIO_PIN_4));
+
+//		
+//		
+//		if(	Semaphore != 0)
+//		{	
+//			TimerEnable(TIMER0_BASE, TIMER_BOTH);
+//			Semaphore = 0;
+
+//			GPIOPinWrite(GPIOF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3, lfsr);//Write to the pins	
+//			SSI3->CR1 = 
+//			HWREGBITW(GPIOF_BASE + GPIO_O_DATA + 0x3FC,1) = lfsr & 1;
+//			HWREGBITW(GPIOF_BASE + GPIO_O_DATA + 0x3FC,2) = (lfsr>>1) & 1;;
+//			HWREGBITW(GPIOF_BASE + GPIO_O_DATA + 0x3FC,4) = (lfsr>>2) & 1;
+//			HWREGBITW(GPIOE_BASE + GPIO_O_DATA + 0x3FC,8) = (lfsr>>3) & 1;
+
+//			if(Time)
+//			{
+//				HWREGBITW(GPIOE_BASE + GPIO_O_DATA,0) = 1;
+//				HWREGBITW(GPIOE_BASE + GPIO_O_DATA,1) = 1;
+//				HWREGBITW(GPIOE_BASE + GPIO_O_DATA,2) = 1;
+//				HWREGBITW(GPIOE_BASE + GPIO_O_DATA,4) = 1;
+//				HWREGBITW(GPIOE_BASE + GPIO_O_DATA,8) = 1;
+//				HWREGBITW(GPIOE_BASE + GPIO_O_DATA,16) = 1;
+//			}
+//			else
+//			{
+//				HWREGBITW(GPIOE_BASE + GPIO_O_DATA ,0) = 0;
+//				HWREGBITW(GPIOE_BASE + GPIO_O_DATA ,1) = 0;
+//				HWREGBITW(GPIOE_BASE + GPIO_O_DATA ,2) = 0;
+//				HWREGBITW(GPIOE_BASE + GPIO_O_DATA ,4) = 0;
+//				HWREGBITW(GPIOE_BASE + GPIO_O_DATA ,8) = 0;
+//				HWREGBITW(GPIOE_BASE + GPIO_O_DATA ,16) = 0;
+//			}
+//			Time ^= 0xFF;
+////			GREEN_LED = 1;
+//			/* taps: 16 14 13 11; feedback polynomial: x^16 + x^14 + x^13 + x^11 + 1 */
+//			//x^32,x^22,x^2,x^1
+//			bit  = ((lfsr >> 0) ^ (lfsr >> 10) ^ (lfsr >> 30) ) & 1;
+//			
+//			lfsr =  (lfsr >> 1) | (bit << 15);
+//		}
+//		
+//		TempCh = RngGet(&RxBufpt);
+
+//		if(TempCh != EOF)
+//		{/*Call the Parser functions*/}
+////			if((U8)TempCh == '\r')
+////			{
+////				printf("\r\n");
+////			}
+////			
+////			switch((U8)TempCh)
+////			{
+////				case('a'):
+////					BaseTime += 0x10000000;
+////					printf("%X\r\n",BaseTime);
+////					break;
+////				case('A'):
+////					BaseTime -= 0x10000000;
+////					printf("%X\r\n",BaseTime);
+////					break;
+////				case('s'):
+////					BaseTime += 0x100000;
+////					printf("%X\r\n",BaseTime);
+////					break;
+////				case('S'):
+////					BaseTime -= 0x100000;
+////					printf("%X\r\n",BaseTime);
+////					break;
+////				case('d'):
+////					BaseTime += 0x10000;
+////					printf("%X\r\n",BaseTime);
+////					break;
+////				case('D'):
+////					BaseTime -= 0x10000;
+////					printf("%X\r\n",BaseTime);
+////					break;
+////				case('f'):
+////					BaseTime += 0x100;
+////					printf("%X\r\n",BaseTime);
+////					break;
+////				case('F'):
+////					BaseTime -= 0x100;
+////					printf("%X\r\n",BaseTime);
+////					break;
+////				case('g'):
+////					BaseTime += 0x1;
+////					printf("%X\r\n",BaseTime);
+////					break;
+////				case('G'):
+////					BaseTime -= 0x1;
+////					printf("%X\r\n",BaseTime);
+////					break;
+////				case(' '):
+////					printf("Pushed new time \r\n");
+////					TimerLoadSet(TIMER0_BASE,TIMER_A,BaseTime);//API says to use the Timer A if full width
+////					break;
+////				break;
+////				default:
+////				{
+////					printf("%f\r\n",(BaseTime * (1.0/50000000.0)));
+////				}
+////				
+////				
+////			}
+////		}
 	}
 	//Should never end up here
 }

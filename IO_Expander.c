@@ -1,6 +1,6 @@
 #include <main.h>
 //#include <stdint.h>
-//#include <stdio.h>
+#include <stdio.h>
 #include "TM4C123GH6PM.h"                    // Device header
 //#include "Serial.h"
 //#include "inc/hw_ints.h"
@@ -37,19 +37,24 @@
 	
 	return;
  }
- void Spi_Blk(U8 *BuffOut,U8 *BuffIn,U16 Length, U8 Device)
+ void Spi_Blk(U16 *BuffOut,U16 *BuffIn,U16 Length, U8 Device)
  {
-//	SSIDMAEnable(SSI3_BASE, SSI_DMA_RX | SSI_DMA_TX);
 	U16 index = 0;
+	U32 temp;
+//	SSIDMAEnable(SSI3_BASE, SSI_DMA_RX | SSI_DMA_TX);
+//	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0x00);//Write to the pins
+	
 	do
 	{
 		SSIDataPut(SSI3_BASE,(U32)BuffOut[index]);
 		while(SSIBusy(SSI3_BASE));
 		//BuffIn[index] = (U8)HWREG(SSI3_BASE + SSI_O_DR);
-		SSIDataGet(SSI3_BASE,(U32*)&BuffIn[index]);
+		SSIDataGet(SSI3_BASE,&temp);
+		BuffIn[index] = (U16)temp;
 	}while(index++ < Length);
 
 //	SSIDMADisable(SSI3_BASE,SSI_DMA_RX | SSI_DMA_TX);
+//	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0xFF);//Write to the pins
 	return;
  }
  
@@ -62,16 +67,17 @@
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
  
     GPIOPinConfigure(GPIO_PD0_SSI3CLK);
-    GPIOPinConfigure(GPIO_PD1_SSI3FSS);
+//    GPIOPinConfigure(GPIO_PD1_SSI3FSS);
     GPIOPinConfigure(GPIO_PD2_SSI3RX);//MISO
     GPIOPinConfigure(GPIO_PD3_SSI3TX);//MOSI
  
     // Configures the pins for use by the SSI, takes 2 parameters
-    GPIOPinTypeSSI(GPIOD_BASE, GPIO_PIN_3 | GPIO_PIN_2 | GPIO_PIN_1 | GPIO_PIN_0);
+    GPIOPinTypeSSI(GPIOD_BASE, GPIO_PIN_3 | GPIO_PIN_2 | /*GPIO_PIN_1 | */GPIO_PIN_0);
 
 	SSIClockSourceSet(SSI3_BASE, SSI_CLOCK_SYSTEM);
-	SSIConfigSetExpClk(SSI3_BASE, SysCtlClockGet(),	SSI_FRF_MOTO_MODE_0, SSI_MODE_MASTER, SysCtlClockGet() /256, 8);
+	SSIConfigSetExpClk(SSI3_BASE, SysCtlClockGet(),	SSI_FRF_MOTO_MODE_0, SSI_MODE_MASTER, SysCtlClockGet() / 1024, 16);
 	SSIAdvModeSet(SSI3_BASE, SSI_ADV_MODE_LEGACY);
+	
 	
 	SSIEnable(SSI3_BASE);
 	return;

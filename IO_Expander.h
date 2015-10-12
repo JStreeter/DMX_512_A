@@ -4,8 +4,8 @@
 
 #define ExIO(x,y)	Spi_Blk(x,x,y,0)
 
-#define IO_Ex_Write 0x40
-#define IO_Ex_Read 	0x41
+#define IO_Ex_Write 0x4000
+#define IO_Ex_Read 	0x4100
 
 /////////////////////// BANK == 1 /////////////////////////ALL PortA then All Port B
 #define IO_Ex_1_IODIRA 		0x00
@@ -61,7 +61,7 @@
 
 
 
-extern void Spi_Blk(U8 *BuffOut,U8 *BuffIn,U16 Length, U8 Device);
+extern void Spi_Blk(U16 *BuffOut,U16 *BuffIn,U16 Length, U8 Device);
 extern void SpiSetup(void);
 extern void DMA_Setup(void);
 
