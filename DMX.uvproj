@@ -427,6 +427,16 @@
               <FileType>1</FileType>
               <FilePath>.\Timers.c</FilePath>
             </File>
+            <File>
+              <FileName>Debug_Parse.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Debug_Parse.c</FilePath>
+            </File>
+            <File>
+              <FileName>IO_Expander.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\IO_Expander.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -451,6 +461,11 @@
               <FileName>globals.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\globals.h</FilePath>
+            </File>
+            <File>
+              <FileName>IO_Expander.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\IO_Expander.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -539,6 +554,11 @@
               <FileName>udma.c</FileName>
               <FileType>1</FileType>
               <FilePath>C:\ti\TivaWare_C_Series-2.1.1.71\driverlib\udma.c</FilePath>
+            </File>
+            <File>
+              <FileName>ssi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\ti\TivaWare_C_Series-2.1.1.71\driverlib\ssi.c</FilePath>
             </File>
           </Files>
         </Group>

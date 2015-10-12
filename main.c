@@ -19,7 +19,8 @@
 #include "inc/hw_types.h"
 #include "inc/hw_flash.h"
 #include "inc/hw_timer.h"
-//#include "inc/hw_interrupt.h"
+#include "inc/hw_gpio.h"
+#include "inc/hw_ssi.h"
 
 #include "driverlib/interrupt.h"
 #include "driverlib/cpu.h"
@@ -30,8 +31,10 @@
 #include "driverlib/uart.h"
 #include "driverlib/pin_map.h"
 #include "driverlib/timer.h"
+#include "driverlib/ssi.h"
 #include <string.h>
 
+#include "IO_Expander.h"
 ////////////////////////////////////////////////////////////////////////////////
 	// EXTERNALS
 ////////////////////////////////////////////////////////////////////////////////
@@ -40,11 +43,12 @@ FILE __stdout;
 ////////////////////////////////////////////////////////////////////////////////
 	// GLOBALS
 ////////////////////////////////////////////////////////////////////////////////
-
+//C4-C7
 ////////////////////////////////////////////////////////////////////////////////
 	//  CONSTANTS
 ////////////////////////////////////////////////////////////////////////////////
-
+#define PULSETEST      (*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 1*4)))
+ 
 ////////////////////////////////////////////////////////////////////////////////
 	// FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////
@@ -58,9 +62,13 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	//Perhial Clock enable
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);//UART0Pins
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);//UART1Pins
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);//UART1Pins
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);//Leds Push Buttons
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);//Leds Push Buttons
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);//A0,A1
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_UART1);//B0,B1
+	
+	SysCtlGPIOAHBEnable(SYSCTL_PERIPH_GPIOF);
 	
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);//Timer 0
 
@@ -69,6 +77,12 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
     SYSCTL->GPIOHBCTL = 0;
 
     // Configure LED and pushbutton pins
+	GPIOPadConfigSet(GPIOE_BASE,GPIO_PIN_3,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
+	GPIODirModeSet(GPIOE_BASE,GPIO_PIN_3,GPIO_DIR_MODE_OUT);
+	
+	//CCS
+	GPIOPadConfigSet(GPIOD_BASE,GPIO_PIN_1,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
+	GPIODirModeSet(GPIOD_BASE,GPIO_PIN_1,GPIO_DIR_MODE_OUT);
 	//Leds First
     GPIOPadConfigSet(GPIOF_BASE,GPIO_PIN_1 | GPIO_PIN_2| GPIO_PIN_3,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
 	GPIODirModeSet(GPIOF_BASE,GPIO_PIN_1 | GPIO_PIN_2| GPIO_PIN_3,GPIO_DIR_MODE_OUT);
@@ -115,26 +129,16 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 //	IntRegister(INT_UART0, UART0Handler);
 //	TimerIntRegister(TIMER0_BASE,TIMER_BOTH,TIMER0A_Handler);
 //END TIMER//
+	IntPrioritySet(INT_UART0, 0x05);
+	IntPrioritySet(INT_SSI3, 0x10);
+	SpiSetup();
 	HIndex = 0;
 	TIndex = 0;	
-
+	
+	//HWREGBITW(GPIOE_BASE+GPIO_O_DATA,3) = 1;
 	return;
 }
-// Blocking function that writes a serial character when the UART buffer is not full
-//void putcUart1(char c)
-//{
-//	while (UART1->FR & UART_FR_TXFF);//<<<<<<-------------------------------------------WHILE!!!!
-//	UART1->DR = c;
-//}
-// Blocking function that writes a string when the UART buffer is not full
-//void putsUart1(char* str)
-//{
-//	int i;
-//    for (i = 0; i < strlen(str); i++)
-//	{
-//	  fputc(str[i],&__stdout);
-//	 }
-//}
+
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //       @@@@      @@@@      @@@@          @@@@@@@@      @@@@      @@@@       //
@@ -150,61 +154,66 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 // 100uS low 14uS High  -------BREAK___________________MAB--PACKET0+Data1+Data2
 //Minimum Packet is 24 data packets(Add padding)
 ////////////////////////////////////////////////////////////////////////////////
+#define GREEN_LED    (*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 3*4)))
 int main(void)
 {
     U32 lfsr = 0xACE1u;/* Any nonzero start state will work. */
     U32	Time;
+	U16	In,Old;
+//	U8	Rand, Rand2, ReadTemp;
 	S16 TempCh;
 	U16 RxBufpt;
+	volatile U32 BaseTime = TimeDebug1;
 	unsigned bit;
 		// Display greeting
 	GPIOPinWrite(GPIOF_BASE, GPIO_PIN_1, 0xFF);//Write to the pins
-	printf("\r\nHello World\r\n");	
+	
 	Semaphore = 0;
+	
 	UARTIntEnable(UART0_BASE,UART_INT_RX);
+	SSIIntEnable(SSI3_BASE,SSI_RXFF);
 	TimerIntEnable(TIMER0_BASE,TIMER_TIMA_TIMEOUT);
 	
 	IntEnable(INT_UART0);
 	IntEnable(INT_TIMER0A);
 	
 	IntMasterEnable();
-
+	
 	Time = SysCtlClockGet();
 	TimerEnable(TIMER0_BASE, TIMER_BOTH);
-	printf("The Clock is set to %d\r\n",Time);
+	
 	//printf("The tick counter then is %f\r\n",1.0);
 	RngFlush(&RxBufpt);
-	while(1)
-	{
-		// Turn on the LED
 	
+	printf("\r\nHello World\r\n");	
+	printf("The Clock is set to %d\r\n",Time);
+	while(GPIOPinRead(GPIOF_BASE, GPIO_PIN_4));//Wait of user
+	
+//	Rand = 0;
+//	ReadTemp =  0;
+	Old = 0;
+//	DMA_Setup_UART1();
+	while(1)
+	{	
+		In =  ReadAddessEXIO();
+		if(Old != In)
+		{
+			printf("In = %03X \r\n",In);
+			Old = In;
+		}
+		
+		WriteOutIOEX(lfsr | In);
+		
 		if(	Semaphore != 0)
 		{	
 			TimerEnable(TIMER0_BASE, TIMER_BOTH);
 			Semaphore = 0;
-
-			GPIOPinWrite(GPIOF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3, lfsr);//Write to the pins
-			
-			/* taps: 16 14 13 11; feedback polynomial: x^16 + x^14 + x^13 + x^11 + 1 */
-			//x^32,x^22,x^2,x^1
-			bit  = ((lfsr >> 0) ^ (lfsr >> 10) ^ (lfsr >> 30) ) & 1;
-			
+			bit  = ((lfsr >> 0) ^ (lfsr >> 2) ^ (lfsr >> 3) ^ (lfsr >> 5) ) & 1;
 			lfsr =  (lfsr >> 1) | (bit << 15);
 		}
-		
+//		
 		TempCh = RngGet(&RxBufpt);
-	
-		if(TempCh != EOF)
-		{
-			if((U8)TempCh == '\r')
-			{
-				printf("\r\n");
-			}
-			else
-			{
-				printf("%c",(U8)TempCh);
-			}
-		}
+		
 	}
 	//Should never end up here
 }

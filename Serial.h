@@ -37,5 +37,5 @@ extern void RngFlush(U16 *LocalTailIndex);//Flush the local Buffer
 extern U16 	RngDataUsed(U16 *LocalTailIndexPeek);//DEBUG
 extern void UartWrite(U8 *DataToSend, U16 Length);//Blocking write of data pack. Data to send then Length. Raw Data
 
-
+void DMA_Setup_UART1(void);
 #endif
