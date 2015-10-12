@@ -79,7 +79,14 @@ volatile U8 TxReady;
 int fputc(int ch, FILE *f) 
 {
 	/* Your implementation of fputc(). */
-	while (UART0->FR & UART_FR_TXFF);//<<<<<<-------------------------------------------WHILE!!!!
+	static U8 FlipFlop;
+	while (UART0->FR & UART_FR_TXFF)
+	{
+		if((FlipFlop++ % 8) == 0)
+			GPIOPinWrite(GPIOF_BASE,GPIO_PIN_1 | GPIO_PIN_2| GPIO_PIN_3,0xFF);
+		else
+			GPIOPinWrite(GPIOF_BASE,GPIO_PIN_1 | GPIO_PIN_2| GPIO_PIN_3,0x00);
+	}//<<<<<<-------------------------------------------WHILE!!!!
 	UART0->DR = ch;
   return ch;
 }
@@ -187,7 +194,7 @@ void UartWrite(U8 *DataToSend, U16 Length)
 	full table for all modes and channels.
 	NOTE: This table must be 1024-byte aligned.*/
 	//
-	U8 x;
+//	U8 x;
 	uint8_t pui8DMAControlTable[1024];
 	//
 	
@@ -196,14 +203,14 @@ void UartWrite(U8 *DataToSend, U16 Length)
 	//
 	// Enable the uDMA controller.
 	//
-	for(x=0;x<=255;x++)
-	{
-		pui8SourceBuffer[x] = x+13;
-		pui8DestBuffer[x] = 0;
-		printf("%02X|%02X ",pui8SourceBuffer[x],pui8DestBuffer[x]);
-		if( (x+1) % 16 == 0)
-			printf("\r\n");
-	}
+//	for(x=0;x<=255;x++)
+//	{
+//		pui8SourceBuffer[x] = x+13;
+//		pui8DestBuffer[x] = 0;
+//		printf("%02X|%02X ",pui8SourceBuffer[x],pui8DestBuffer[x]);
+//		if( (x+1) % 16 == 0)
+//			printf("\r\n");
+//	}
 	
 	uDMAEnable();
 	//
@@ -237,12 +244,12 @@ void UartWrite(U8 *DataToSend, U16 Length)
 	//
 	uDMAChannelEnable(UDMA_CHANNEL_SW);
 	uDMAChannelRequest(UDMA_CHANNEL_SW);
-	
-	for(x=0;x<=255;x++)
-	{
-		printf("%02X|%02X ",pui8SourceBuffer[x],pui8DestBuffer[x]);
-		if( (x+1) % 16 == 0)
-			printf("\r\n");
-	}
+//	
+//	for(x=0;x<=255;x++)
+//	{
+//		printf("%02X|%02X ",pui8SourceBuffer[x],pui8DestBuffer[x]);
+//		if( (x+1) % 16 == 0)
+//			printf("\r\n");
+//	}
 }
 

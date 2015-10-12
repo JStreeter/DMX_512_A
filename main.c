@@ -161,15 +161,16 @@ int main(void)
     U32	Time;
 	U16	In;
 //	U8	Rand, Rand2, ReadTemp;
-//	S16 TempCh;
+	S16 TempCh;
 	U16 RxBufpt;
 	volatile U32 BaseTime = TimeDebug1;
 	unsigned bit;
 		// Display greeting
 	GPIOPinWrite(GPIOF_BASE, GPIO_PIN_1, 0xFF);//Write to the pins
 	printf("\r\nHello World\r\n");	
+	printf("The Clock is set to %d\r\n",Time);
 	Semaphore = 0;
-	while(GPIOPinRead(GPIOF_BASE, GPIO_PIN_4));//Wait of user
+	
 	UARTIntEnable(UART0_BASE,UART_INT_RX);
 	SSIIntEnable(SSI3_BASE,SSI_RXFF);
 	TimerIntEnable(TIMER0_BASE,TIMER_TIMA_TIMEOUT);
@@ -178,99 +179,35 @@ int main(void)
 	IntEnable(INT_TIMER0A);
 	
 	IntMasterEnable();
-
+	
 	Time = SysCtlClockGet();
 	TimerEnable(TIMER0_BASE, TIMER_BOTH);
-	printf("The Clock is set to %d\r\n",Time);
+	
 	//printf("The tick counter then is %f\r\n",1.0);
 	RngFlush(&RxBufpt);
-	
+	while(GPIOPinRead(GPIOF_BASE, GPIO_PIN_4));//Wait of user
 	
 //	Rand = 0;
 //	ReadTemp =  0;
-//	
+	
+//	DMA_Setup_UART1();
 	while(1)
-	{
+	{	
 		In =  ReadAddessEXIO();
-		printf("In = %03X \r\n",In);
-		
+		//printf("In = %03X \r\n",In);
+		printf("Hello World\r\n");
 		WriteOutIOEX(lfsr | In);
 		
 		if(	Semaphore != 0)
 		{	
 			TimerEnable(TIMER0_BASE, TIMER_BOTH);
 			Semaphore = 0;
-			/* taps: 16 14 13 11; feedback polynomial: x^16 + x^14 + x^13 + x^11 + 1 */
-			//x^32,x^22,x^2,x^1
 			bit  = ((lfsr >> 0) ^ (lfsr >> 2) ^ (lfsr >> 3) ^ (lfsr >> 5) ) & 1;
-			
 			lfsr =  (lfsr >> 1) | (bit << 15);
 		}
 //		
-//		TempCh = RngGet(&RxBufpt);
-
-//		if(TempCh != EOF)
-//		{/*Call the Parser functions*/}
-////			if((U8)TempCh == '\r')
-////			{
-////				printf("\r\n");
-////			}
-////			
-////			switch((U8)TempCh)
-////			{
-////				case('a'):
-////					BaseTime += 0x10000000;
-////					printf("%X\r\n",BaseTime);
-////					break;
-////				case('A'):
-////					BaseTime -= 0x10000000;
-////					printf("%X\r\n",BaseTime);
-////					break;
-////				case('s'):
-////					BaseTime += 0x100000;
-////					printf("%X\r\n",BaseTime);
-////					break;
-////				case('S'):
-////					BaseTime -= 0x100000;
-////					printf("%X\r\n",BaseTime);
-////					break;
-////				case('d'):
-////					BaseTime += 0x10000;
-////					printf("%X\r\n",BaseTime);
-////					break;
-////				case('D'):
-////					BaseTime -= 0x10000;
-////					printf("%X\r\n",BaseTime);
-////					break;
-////				case('f'):
-////					BaseTime += 0x100;
-////					printf("%X\r\n",BaseTime);
-////					break;
-////				case('F'):
-////					BaseTime -= 0x100;
-////					printf("%X\r\n",BaseTime);
-////					break;
-////				case('g'):
-////					BaseTime += 0x1;
-////					printf("%X\r\n",BaseTime);
-////					break;
-////				case('G'):
-////					BaseTime -= 0x1;
-////					printf("%X\r\n",BaseTime);
-////					break;
-////				case(' '):
-////					printf("Pushed new time \r\n");
-////					TimerLoadSet(TIMER0_BASE,TIMER_A,BaseTime);//API says to use the Timer A if full width
-////					break;
-////				break;
-////				default:
-////				{
-////					printf("%f\r\n",(BaseTime * (1.0/50000000.0)));
-////				}
-////				
-////				
-////			}
-////		}
+		TempCh = RngGet(&RxBufpt);
+		
 	}
 	//Should never end up here
 }
