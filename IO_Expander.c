@@ -24,6 +24,7 @@
 #include "driverlib/udma.h"
 #include <string.h>
 
+#include "IO_Expander.h"
  void SSI3_Handler()
  {
 	
@@ -60,6 +61,7 @@
  
  void SpiSetup()
  {
+	U16 Buffer[3];
     // Enable the SSI0 peripheral
     SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI3);
  
@@ -80,6 +82,33 @@
 	
 	
 	SSIEnable(SSI3_BASE);
+	
+		GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0xFF);//Write to the pins
+
+	Buffer[0] = IO_Ex_Write | IO_Ex_0_IOCON;									//WRITE
+	Buffer[1] = 0x0404;
+	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0x00);//Write to the pins
+	ExIO(Buffer,2);
+	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0xFF);//Write to the pins
+
+	Buffer[0] = IO_Ex_Write | IO_Ex_0_GPPUA;									//WRITE
+	Buffer[1] = 0xFFFF;
+	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0x00);//Write to the pins
+	ExIO(Buffer,2);
+	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0xFF);//Write to the pins
+	
+	Buffer[0] = IO_Ex_Write | IO_Ex_0_IODIRA;									//WRITE
+	Buffer[1] = 0xFF01;
+	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0x00);//Write to the pins
+	ExIO(Buffer,2);
+	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0xFF);//Write to the pins
+	
+	Buffer[0] = IO_Ex_Write | IO_Ex_0_OLATA;// IO_Ex_0_IODIRA;		
+	Buffer[1] =  0xFF80;
+	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0x00);//Write to the pins
+	ExIO(Buffer,2);
+	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0xFF);//Write to the pin
+	
 	return;
  }
  
@@ -133,3 +162,27 @@
 //	uDMAChannelRequest(UDMA_CHANNEL_SW);
  }
  
+ //817 - 223 - 3344 David Dodson
+ U16 ReadAddessEXIO()
+ {
+	U16 Buffer[3];
+	U8 RV = 0;
+	Buffer[0] = IO_Ex_Read | IO_Ex_0_GPIOA;
+	Buffer[1] = 0x0000;
+	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0x00);//Write to the pins
+	ExIO(Buffer,2);
+	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0xFF);//Write to the pins
+	RV = (Buffer[1] >> 7) & 0x01FF;
+	return RV;
+ }
+ 
+ void WriteOutIOEX(U16 output)
+ {
+	U16 Buffer[3];
+	Buffer[0] = IO_Ex_Write | IO_Ex_0_OLATA;// IO_Ex_0_IODIRA;		
+	Buffer[1] =  ((output) & 0x007F) | 0xFF80;
+	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0x00);//Write to the pins
+	ExIO(Buffer,2);
+	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0xFF);//Write to the pins
+	return;
+ }
