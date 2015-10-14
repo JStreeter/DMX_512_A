@@ -63,6 +63,7 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	//Perhial Clock enable
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);//UART0Pins
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);//UART1Pins
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC);//UART1Pins
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);//UART1Pins
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);//Leds Push Buttons
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);//Leds Push Buttons
@@ -109,18 +110,20 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 //END/////////////Debug//////////////////////////////////////////////////////////////////////////////////
 	
 ///////////////DMX-512-A/////////////////////////////////////////////////////////////////////////////////////	
-	GPIOPinTypeUART(GPIOB_BASE,GPIO_PIN_0 | GPIO_PIN_1);
+	GPIOPinTypeUART(GPIOC_BASE,GPIO_PIN_5 | GPIO_PIN_4);
 	//
 	// Enable UART1 functionality on GPIO Port B pins 0 and 1.
 	//
-	GPIOPinConfigure(GPIO_PC4_U1RX);
-	GPIOPinConfigure(GPIO_PC5_U1TX);
-
+	
    	// Configure UART0 to 115200 baud, 8N1 format (must be 3 clocks from clock enable and config writes)
 	UARTEnable(UART1_BASE);
 	UARTClockSourceSet(UART1_BASE,UART_CLOCK_SYSTEM);
 	UARTConfigSetExpClk(UART1_BASE, SysCtlClockGet(), DMXBAUD, UART_CONFIG_WLEN_8 | UART_CONFIG_PAR_NONE | UART_CONFIG_STOP_TWO);
 	UARTFIFODisable(UART1_BASE);
+	
+	GPIOPinConfigure(GPIO_PC5_U1TX);
+	GPIOPinConfigure(GPIO_PC4_U1RX);
+
 //END/////////////DMX-512-A//////////////////////////////////////////////////////////////////////////////////
 
 //TIMER//
