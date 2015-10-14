@@ -187,7 +187,7 @@ void UartWrite(U8 *DataToSend, U16 Length)
 	full table for all modes and channels.
 	NOTE: This table must be 1024-byte aligned.*/
 	//
-//	U8 x;
+	U16 x;
 	uint8_t pui8DMAControlTable[1024];
 	//
 	
@@ -196,15 +196,16 @@ void UartWrite(U8 *DataToSend, U16 Length)
 	//
 	// Enable the uDMA controller.
 	//
-//	for(x=0;x<=255;x++)
-//	{
-//		pui8SourceBuffer[x] = x+13;
-//		pui8DestBuffer[x] = 0;
-//		printf("%02X|%02X ",pui8SourceBuffer[x],pui8DestBuffer[x]);
-//		if( (x+1) % 16 == 0)
-//			printf("\r\n");
-//	}
-	
+	for(x=0;x<=255;x++)
+	{
+		pui8SourceBuffer[x] = x+13;
+		pui8DestBuffer[x] = 0;
+		printf("%02X|%02X ",pui8SourceBuffer[x],pui8DestBuffer[x]);
+		if( (x+1) % 16 == 0)
+			printf("\r\n");
+	}
+	printf("\r\n\n\n\n\n");
+	printf("-------------------------------------------------------------------\r\n");
 	uDMAEnable();
 	//
 	// Set the base for the channel control table.
@@ -222,14 +223,14 @@ void UartWrite(U8 *DataToSend, U16 Length)
 	// A bus arbitration size of 8 is used.
 	//
 	uDMAChannelControlSet(UDMA_CHANNEL_SW | UDMA_PRI_SELECT,
-	UDMA_SIZE_8 | UDMA_SRC_INC_8 | UDMA_DST_INC_8 | UDMA_ARB_8);
+		UDMA_SIZE_8 | UDMA_SRC_INC_8 | UDMA_DST_INC_8 | UDMA_ARB_8);
 	//
 	// The transfer buffers and transfer size are now configured. The transfer
 	// uses AUTO mode, which means that the transfer automatically runs to
 	// completion after the first request.
 	//
 	uDMAChannelTransferSet(UDMA_CHANNEL_SW | UDMA_PRI_SELECT,
-	UDMA_MODE_AUTO, pui8SourceBuffer, pui8DestBuffer, sizeof(pui8DestBuffer));
+		UDMA_MODE_BASIC, pui8SourceBuffer, pui8DestBuffer, sizeof(pui8DestBuffer));
 	//
 	// Finally, the channel must be enabled. Because this is a software-
 	// initiated transfer, a request must also be made. The request starts the
@@ -238,11 +239,11 @@ void UartWrite(U8 *DataToSend, U16 Length)
 	uDMAChannelEnable(UDMA_CHANNEL_SW);
 	uDMAChannelRequest(UDMA_CHANNEL_SW);
 //	
-//	for(x=0;x<=255;x++)
-//	{
-//		printf("%02X|%02X ",pui8SourceBuffer[x],pui8DestBuffer[x]);
-//		if( (x+1) % 16 == 0)
-//			printf("\r\n");
-//	}
+	for(x=0;x<=255;x++)
+	{
+		printf("%02X|%02X ",pui8SourceBuffer[x],pui8DestBuffer[x]);
+		if( (x+1) % 16 == 0)
+			printf("\r\n");
+	}
 }
 

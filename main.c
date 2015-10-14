@@ -21,6 +21,7 @@
 #include "inc/hw_timer.h"
 #include "inc/hw_gpio.h"
 #include "inc/hw_ssi.h"
+#include "inc/hw_uart.h"
 
 #include "driverlib/interrupt.h"
 #include "driverlib/cpu.h"
@@ -67,7 +68,7 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);//Leds Push Buttons
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);//A0,A1
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_UART1);//B0,B1
-	
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_UDMA);
 	SysCtlGPIOAHBEnable(SYSCTL_PERIPH_GPIOF);
 	
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);//Timer 0
@@ -112,20 +113,21 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	//
 	// Enable UART1 functionality on GPIO Port B pins 0 and 1.
 	//
-	GPIOPinConfigure(GPIO_PB0_U1RX);
-	GPIOPinConfigure(GPIO_PB1_U1TX);
+	GPIOPinConfigure(GPIO_PC4_U1RX);
+	GPIOPinConfigure(GPIO_PC5_U1TX);
 
    	// Configure UART0 to 115200 baud, 8N1 format (must be 3 clocks from clock enable and config writes)
 	UARTEnable(UART1_BASE);
 	UARTClockSourceSet(UART1_BASE,UART_CLOCK_SYSTEM);
 	UARTConfigSetExpClk(UART1_BASE, SysCtlClockGet(), DMXBAUD, UART_CONFIG_WLEN_8 | UART_CONFIG_PAR_NONE | UART_CONFIG_STOP_TWO);
+	UARTFIFODisable(UART1_BASE);
 //END/////////////DMX-512-A//////////////////////////////////////////////////////////////////////////////////
 
 //TIMER//
 	TimerConfigure(TIMER0_BASE,TIMER_CFG_ONE_SHOT);
 	TimerClockSourceSet(TIMER0_BASE,TIMER_CLOCK_SYSTEM);
 	TimerLoadSet(TIMER0_BASE,TIMER_A,TimeDebug1);//API says to use the Timer A if full width
-	//IntRegister(INT_TIMER0A, UART0Handler);
+//	IntRegister(INT_TIMER0A, UART0Handler);
 //	IntRegister(INT_UART0, UART0Handler);
 //	TimerIntRegister(TIMER0_BASE,TIMER_BOTH,TIMER0A_Handler);
 //END TIMER//
@@ -155,16 +157,18 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 //Minimum Packet is 24 data packets(Add padding)
 ////////////////////////////////////////////////////////////////////////////////
 #define GREEN_LED    (*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 3*4)))
+
 int main(void)
 {
     U32 lfsr = 0xACE1u;/* Any nonzero start state will work. */
     U32	Time;
 	U16	In,Old;
-//	U8	Rand, Rand2, ReadTemp;
-	S16 TempCh;
+	volatile S16 TempCh;
 	U16 RxBufpt;
 	volatile U32 BaseTime = TimeDebug1;
 	unsigned bit;
+	U8 Rand;
+	
 		// Display greeting
 	GPIOPinWrite(GPIOF_BASE, GPIO_PIN_1, 0xFF);//Write to the pins
 	
@@ -172,8 +176,8 @@ int main(void)
 	
 	UARTIntEnable(UART0_BASE,UART_INT_RX);
 	SSIIntEnable(SSI3_BASE,SSI_RXFF);
-	TimerIntEnable(TIMER0_BASE,TIMER_TIMA_TIMEOUT);
-	
+	TimerIntEnable(TIMER0_BASE,TIMER_TIMA_TIMEOUT);	
+
 	IntEnable(INT_UART0);
 	IntEnable(INT_TIMER0A);
 	
@@ -189,12 +193,16 @@ int main(void)
 	printf("The Clock is set to %d\r\n",Time);
 	while(GPIOPinRead(GPIOF_BASE, GPIO_PIN_4));//Wait of user
 	
-//	Rand = 0;
-//	ReadTemp =  0;
 	Old = 0;
 //	DMA_Setup_UART1();
 	while(1)
 	{	
+		
+//		if(UART1->RIS & UART_RIS_TXRIS)
+//		{
+//			 UART1->DR  = Rand++;
+//		}
+		
 		In =  ReadAddessEXIO();
 		if(Old != In)
 		{
