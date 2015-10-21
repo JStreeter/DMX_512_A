@@ -33,6 +33,7 @@
 #include "driverlib/pin_map.h"
 #include "driverlib/timer.h"
 #include "driverlib/ssi.h"
+#include "driverlib/udma.h"
 #include <string.h>
 
 #include "IO_Expander.h"
@@ -163,7 +164,7 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 
 int main(void)
 {
-    U32 lfsr = 0xACE1u;/* Any nonzero start state will work. */
+    U32 lfsr = 0xAAAAu;/* Any nonzero start state will work. */
     U32	Time;
 	U16	In,Old;
 	volatile S16 TempCh;
@@ -171,13 +172,16 @@ int main(void)
 	volatile U32 BaseTime = TimeDebug1;
 	unsigned bit;
 	U8 Rand;
+	U8 BLAH[256];
+	U8 Short[16],RunOnce;
+	U16 x;
 	
+	RunOnce = 0;
 		// Display greeting
-	GPIOPinWrite(GPIOF_BASE, GPIO_PIN_1, 0xFF);//Write to the pins
-	
-	Semaphore = 0;
-	
+//	
 	UARTIntEnable(UART0_BASE,UART_INT_RX);
+//	UARTIntEnable(UART1_BASE,UART_INT_DMATX);
+
 	SSIIntEnable(SSI3_BASE,SSI_RXFF);
 	TimerIntEnable(TIMER0_BASE,TIMER_TIMA_TIMEOUT);	
 
@@ -192,12 +196,31 @@ int main(void)
 	//printf("The tick counter then is %f\r\n",1.0);
 	RngFlush(&RxBufpt);
 	
+	TimerLoadSet(TIMER0_BASE,TIMER_A,TimeDebug1<<3);//API says to use the Timer A if full width
+	TimerEnable(TIMER0_BASE, TIMER_BOTH);
+	Semaphore = 0;
+	
+	GPIOPinWrite(GPIOF_BASE, GPIO_PIN_3, 0xFF);//Write to the pins
+	while(Semaphore == 0);
+	TimerLoadSet(TIMER0_BASE,TIMER_A,TimeDebug1);//API says to use the Timer A if full width
+	GPIOPinWrite(GPIOF_BASE, GPIO_PIN_3, 0x00);//Write to the pins
+
 	printf("\r\nHello World\r\n");	
 	printf("The Clock is set to %d\r\n",Time);
-	while(GPIOPinRead(GPIOF_BASE, GPIO_PIN_4));//Wait of user
+	GPIOPinWrite(GPIOF_BASE, GPIO_PIN_2, 0xFF);//Write to the pins
+
+	printf("In = %03X \r\n",ReadAddessEXIO());
 	
+	while(GPIOPinRead(GPIOF_BASE, GPIO_PIN_4));//Wait of user
+	GPIOPinWrite(GPIOF_BASE, GPIO_PIN_2, 0x00);//Write to the pins
 	Old = 0;
-//	DMA_Setup_UART1();
+	DMA_Setup_UART1();
+//	for(x=0;x<256;x++)
+//	{
+//			BLAH[x] = 'b';
+//	}
+	Rand = sprintf((char*)&BLAH[0],"This is the exact message that I am printing.\r\n\0");
+	printf("%s",BLAH);
 	while(1)
 	{	
 		
@@ -213,6 +236,24 @@ int main(void)
 			Old = In;
 		}
 		
+		if(GPIOPinRead(GPIOF_BASE, GPIO_PIN_4) && RunOnce == 0)
+		{
+			RunOnce = 1;
+			uDMAChannelTransferSet( UDMA_CHANNEL_UART0TX | UDMA_PRI_SELECT,
+										UDMA_MODE_BASIC,
+										BLAH,
+										(void *)(UART0_BASE + UART_O_DR),
+										strlen((char*)&BLAH[0]));
+			uDMAChannelEnable(UDMA_CHANNEL_UART0TX);
+			UARTDMAEnable(UART0_BASE, UART_DMA_TX);
+			uDMAChannelRequest(UDMA_CHANNEL_UART0TX);
+		}
+		
+//		if()
+//		{
+//		
+//		}
+		
 		WriteOutIOEX(lfsr | In);
 		
 		if(	Semaphore != 0)
@@ -224,7 +265,10 @@ int main(void)
 		}
 //		
 		TempCh = RngGet(&RxBufpt);
-		
+		if(TempCh != EOF)
+		{
+			printf("%c",(char)TempCh);
+		}
 	}
 	//Should never end up here
 }

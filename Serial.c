@@ -11,13 +11,28 @@
 #include "inc/hw_uart.h"
 #include "driverlib/uart.h"
 #include "driverlib/gpio.h"
+#include "driverlib/ssi.h"
 #include <stdio.h>
 #include "globals.h"
 #include "driverlib/udma.h"
+#include "driverlib/interrupt.h"
+#include "inc/hw_ints.h"
+#include "inc/hw_ssi.h"
+
+#define MEM_BUFFER_SIZE 1024
+static unsigned long g_ulSrcBuf[MEM_BUFFER_SIZE];
+static unsigned long g_ulDstBuf[MEM_BUFFER_SIZE];
+//static unsigned long g_uluDMAErrCount = 0;
+//static unsigned long g_ulBadISR = 0;
+//static unsigned long g_ulMemXferCount = 0;
+
+unsigned char pui8DMAControlTable[1024]__attribute__((aligned (1024*8)));//THIS IS REQUIRED FOR DMA DO NOT ASK
+
 
 volatile U8			UartRingBuffer[MAXRINGBUFSIZE]; //Max length of NEMA sentece is 80 and the max STX is 154
 volatile U16			HIndex, TIndex;			//Internal Indexs
 volatile U8 TxReady;
+uint8_t pui8DMAControlTable[1024];//THIS IS REQUIRED FOR DMA DO NOT ASK
 
 /*----------------------------------------------------------------------------
   Write character to Serial Port
@@ -64,11 +79,25 @@ volatile U8 TxReady;
 
  void UART0_Handler()//DEBUG
 {
+	 uint32_t status;
 	if (UART0->RIS & UART_RIS_RXRIS)				//Got a Byte of Data?//RX IF
 	{
 		UARTIntClear(UART0_BASE,UART_INT_RX);			//Clear Flag
 		RngAdd(UART0->DR & 0xFF);		//Yes this is all it does	//A
 	}
+    // If RX channel no longer enabled, receive finished
+    if (!uDMAChannelIsEnabled(UDMA_CHANNEL_UART0RX))
+    {
+
+    }
+    // Else if TX channel no longer enabled, transmit finished
+    else if (! uDMAChannelIsEnabled(UDMA_CHANNEL_UART0TX))
+    {
+        UARTDMADisable(UART0_BASE, UART_DMA_TX);
+    }
+
+    status = UARTIntStatus(UART0_BASE, true);
+    UARTIntClear(UART0_BASE, status);
 
 	return;
 }
@@ -187,63 +216,107 @@ void UartWrite(U8 *DataToSend, U16 Length)
 	full table for all modes and channels.
 	NOTE: This table must be 1024-byte aligned.*/
 	//
-	U16 x;
-	uint8_t pui8DMAControlTable[1024];
+//	U16 x;
+	
 	//
 	
-	uint8_t pui8SourceBuffer[256];
-	uint8_t pui8DestBuffer[256];
+//	uint8_t pui8SourceBuffer[256];
+//	uint8_t pui8DestBuffer[256];
 	//
 	// Enable the uDMA controller.
 	//
-	for(x=0;x<=255;x++)
-	{
-		pui8SourceBuffer[x] = x+13;
-		pui8DestBuffer[x] = 0;
-		printf("%02X|%02X ",pui8SourceBuffer[x],pui8DestBuffer[x]);
-		if( (x+1) % 16 == 0)
-			printf("\r\n");
-	}
+//	for(x=0;x<=255;x++)
+//	{
+//		pui8SourceBuffer[x] = 'A';
+//		pui8DestBuffer[x] = 0;
+//		//printf("%02X|%02X ",pui8SourceBuffer[x],pui8DestBuffer[x]);
+//		printf("%02X",pui8SourceBuffer[x]);
+//		if( (x+1) % 32 == 0)
+//			printf("\r\n");
+//	}
 	printf("\r\n\n\n\n\n");
 	printf("-------------------------------------------------------------------\r\n");
 	uDMAEnable();
-	//
-	// Set the base for the channel control table.
-	//
+////	//
+////	// Set the base for the channel control table.
+////	//
 	uDMAControlBaseSet(&pui8DMAControlTable[0]);
-	//
-	// No attributes must be set for a software-based transfer. The attributes
-	// are cleared by default, but are explicitly cleared here, in case they
-	// were set elsewhere.
-	//
-	uDMAChannelAttributeDisable(UDMA_CHANNEL_SW, UDMA_ATTR_ALL);
-	//
-	// Now set up the characteristics of the transfer for 8-bit data size, with
-	// source and destination increments in bytes, and a byte-wise buffer copy.
-	// A bus arbitration size of 8 is used.
-	//
-	uDMAChannelControlSet(UDMA_CHANNEL_SW | UDMA_PRI_SELECT,
-		UDMA_SIZE_8 | UDMA_SRC_INC_8 | UDMA_DST_INC_8 | UDMA_ARB_8);
-	//
-	// The transfer buffers and transfer size are now configured. The transfer
-	// uses AUTO mode, which means that the transfer automatically runs to
-	// completion after the first request.
-	//
-	uDMAChannelTransferSet(UDMA_CHANNEL_SW | UDMA_PRI_SELECT,
-		UDMA_MODE_BASIC, pui8SourceBuffer, pui8DestBuffer, sizeof(pui8DestBuffer));
-	//
-	// Finally, the channel must be enabled. Because this is a software-
-	// initiated transfer, a request must also be made. The request starts the
-	// transfer.
-	//
-	uDMAChannelEnable(UDMA_CHANNEL_SW);
-	uDMAChannelRequest(UDMA_CHANNEL_SW);
-//	
-	for(x=0;x<=255;x++)
-	{
-		printf("%02X|%02X ",pui8SourceBuffer[x],pui8DestBuffer[x]);
-		if( (x+1) % 16 == 0)
-			printf("\r\n");
-	}
+////	//
+////	// No attributes must be set for a software-based transfer. The attributes
+////	// are cleared by default, but are explicitly cleared here, in case they
+////	// were set elsewhere.
+////	//
+	//uDMAChannelAttributeDisable(UDMA_CHANNEL_SW, UDMA_ATTR_ALL);
+	uDMAChannelAttributeDisable(UDMA_CHANNEL_UART0TX, UDMA_ATTR_ALL);
+	
+////	//
+////	// Now set up the characteristics of the transfer for 8-bit data size, with
+////	// source and destination increments in bytes, and a byte-wise buffer copy.
+////	// A bus arbitration size of 8 is used.
+////	//
+////	uDMAChannelControlSet(UDMA_CHANNEL_UART1TX | UDMA_PRI_SELECT,
+////		UDMA_SIZE_8 | UDMA_SRC_INC_8 | UDMA_DST_INC_8 | UDMA_ARB_8);
+	 uDMAChannelControlSet(  UDMA_CHANNEL_UART0TX    |
+                                UDMA_PRI_SELECT,
+                                UDMA_SIZE_8             |
+                                UDMA_SRC_INC_8          |
+                                UDMA_DST_INC_NONE       |
+                                UDMA_ARB_1              );
+		
+		//uDMAChannelAttributeEnable( UDMA_CHANNEL_UART0TX, UDMA_ATTR_USEBURST);
+		
+////	//
+////	// The transfer buffers and transfer size are now configured. The transfer
+////	// uses AUTO mode, which means that the transfer automatically runs to
+////	// completion after the first request.
+////	//
+////	//uDMAChannelTransferSet(UDMA_CHANNEL_SW | UDMA_PRI_SELECT,
+////	
+////	uDMAChannelTransferSet(UDMA_CHANNEL_UART1TX | UDMA_PRI_SELECT,
+////		UDMA_MODE_AUTO, pui8SourceBuffer, (U8*)(&UART1->DR), sizeof(pui8DestBuffer));
+//	uDMAChannelTransferSet(UDMA_CHANNEL_UART0TX | UDMA_PRI_SELECT,
+//		UDMA_MODE_BASIC, pui8SourceBuffer, (void*)(&UART0->DR), sizeof(pui8DestBuffer));
+////	//
+////	// Finally, the channel must be enabled. Because this is a software-
+////	// initiated transfer, a request must also be made. The request starts the
+////	// transfer.
+////	//
+	UARTIntEnable(UART0_BASE,UART_INT_DMATX);
+
+//        // DMA channel must be enabled first, or an interrupt will occur immediately
+        uDMAChannelEnable(UDMA_CHANNEL_UART0TX);
+        UARTDMAEnable(UART0_BASE, UART_DMA_TX);
 }
 
+void
+InitSWTransfer(void)
+{
+	unsigned int uIdx;
+	
+	for(uIdx = 0; uIdx < 1024; uIdx++)
+	{
+		g_ulSrcBuf[uIdx] = uIdx;
+	}
+	
+	uDMAChannelAttributeDisable(UDMA_CHANNEL_UART0TX, UDMA_ATTR_ALL);
+	uDMAChannelControlSet(  UDMA_CHANNEL_UART0TX    |
+                                UDMA_PRI_SELECT,
+                                UDMA_SIZE_8             |
+                                UDMA_SRC_INC_8          |
+                                UDMA_DST_INC_NONE       |
+                                UDMA_ARB_1              );
+		
+	UARTIntEnable(UART0_BASE,UART_INT_DMATX);
+	uDMAChannelEnable(UDMA_CHANNEL_SSI1RX);
+	SSIDMAEnable(SSI3_BASE, UART_DMA_RX);
+	
+	uDMAChannelEnable(UDMA_CHANNEL_SSI1RX);
+	SSIDMAEnable(SSI3_BASE, UART_DMA_RX);
+//	
+//	IntEnable(INT_UDMA);
+//	uDMAChannelAttributeDisable(UDMA_CHANNEL_SW, UDMA_ATTR_ALL);
+//	uDMAChannelControlSet(UDMA_CHANNEL_SW | UDMA_PRI_SELECT, UDMA_SIZE_32 | UDMA_SRC_INC_32 | UDMA_DST_INC_32 | UDMA_ARB_8);
+//	uDMAChannelTransferSet(UDMA_CHANNEL_SW | UDMA_PRI_SELECT, UDMA_MODE_AUTO, g_ulSrcBuf, g_ulDstBuf, MEM_BUFFER_SIZE);
+//	uDMAChannelEnable(UDMA_CHANNEL_SW);
+//	uDMAChannelRequest(UDMA_CHANNEL_SW);
+}
