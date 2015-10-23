@@ -20,13 +20,9 @@
 #include "inc/hw_ssi.h"
 
 #define MEM_BUFFER_SIZE 1024
-static unsigned long g_ulSrcBuf[MEM_BUFFER_SIZE];
-static unsigned long g_ulDstBuf[MEM_BUFFER_SIZE];
-//static unsigned long g_uluDMAErrCount = 0;
-//static unsigned long g_ulBadISR = 0;
-//static unsigned long g_ulMemXferCount = 0;
-
-unsigned char pui8DMAControlTable[1024]__attribute__((aligned (1024*8)));//THIS IS REQUIRED FOR DMA DO NOT ASK
+static unsigned long 	g_ulSrcBuf[MEM_BUFFER_SIZE];
+static unsigned long 	g_ulDstBuf[MEM_BUFFER_SIZE];
+unsigned char 			pui8DMAControlTable[1024]__attribute__((aligned (1024*8)));//THIS IS REQUIRED FOR DMA DO NOT ASK
 
 
 volatile U8			UartRingBuffer[MAXRINGBUFSIZE]; //Max length of NEMA sentece is 80 and the max STX is 154
@@ -261,22 +257,9 @@ void UartWrite(U8 *DataToSend, U16 Length)
                                 UDMA_SIZE_8             |
                                 UDMA_SRC_INC_8          |
                                 UDMA_DST_INC_NONE       |
-                                UDMA_ARB_1              );
+                                UDMA_NEXT_USEBURST              );
 		
-		//uDMAChannelAttributeEnable( UDMA_CHANNEL_UART0TX, UDMA_ATTR_USEBURST);
-		
-////	//
-////	// The transfer buffers and transfer size are now configured. The transfer
-////	// uses AUTO mode, which means that the transfer automatically runs to
-////	// completion after the first request.
-////	//
-////	//uDMAChannelTransferSet(UDMA_CHANNEL_SW | UDMA_PRI_SELECT,
-////	
-////	uDMAChannelTransferSet(UDMA_CHANNEL_UART1TX | UDMA_PRI_SELECT,
-////		UDMA_MODE_AUTO, pui8SourceBuffer, (U8*)(&UART1->DR), sizeof(pui8DestBuffer));
-//	uDMAChannelTransferSet(UDMA_CHANNEL_UART0TX | UDMA_PRI_SELECT,
-//		UDMA_MODE_BASIC, pui8SourceBuffer, (void*)(&UART0->DR), sizeof(pui8DestBuffer));
-////	//
+
 ////	// Finally, the channel must be enabled. Because this is a software-
 ////	// initiated transfer, a request must also be made. The request starts the
 ////	// transfer.

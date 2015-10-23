@@ -60,6 +60,8 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 {
 	//Main set
 	SysCtlClockSet(SYSCTL_SYSDIV_4|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN);
+	//SysCtlClockSet(SYSCTL_SYSDIV_8|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN);
+	
 	
 	//Perhial Clock enable
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);//UART0Pins
@@ -71,7 +73,8 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);//A0,A1
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_UART1);//B0,B1
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_UDMA);
-	SysCtlGPIOAHBEnable(SYSCTL_PERIPH_GPIOF);
+	
+	SysCtlGPIOAHBDisable(SYSCTL_PERIPH_GPIOF);
 	
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);//Timer 0
 
@@ -221,6 +224,7 @@ int main(void)
 //	}
 	Rand = sprintf((char*)&BLAH[0],"This is the exact message that I am printing.\r\n\0");
 	printf("%s",BLAH);
+	In =  ReadAddessEXIO();
 	while(1)
 	{	
 		
@@ -230,13 +234,18 @@ int main(void)
 //		}
 		
 		In =  ReadAddessEXIO();
-		if(Old != In)
+//		if(Old != In)
+//		{
+//			printf("In = %03X \r\n",In);
+//			Old = In;
+//		}
+
+		if( !uDMAChannelIsEnabled(UDMA_CHANNEL_UART0TX) ) 
 		{
-			printf("In = %03X \r\n",In);
-			Old = In;
+			RunOnce = 0;
 		}
 		
-		if(GPIOPinRead(GPIOF_BASE, GPIO_PIN_4) && RunOnce == 0)
+		if(!GPIOPinRead(GPIOF_BASE, GPIO_PIN_4) && RunOnce == 0)
 		{
 			RunOnce = 1;
 			uDMAChannelTransferSet( UDMA_CHANNEL_UART0TX | UDMA_PRI_SELECT,
@@ -248,6 +257,8 @@ int main(void)
 			UARTDMAEnable(UART0_BASE, UART_DMA_TX);
 			uDMAChannelRequest(UDMA_CHANNEL_UART0TX);
 		}
+		
+		
 		
 //		if()
 //		{
@@ -264,11 +275,11 @@ int main(void)
 			lfsr =  (lfsr >> 1) | (bit << 15);
 		}
 //		
-		TempCh = RngGet(&RxBufpt);
-		if(TempCh != EOF)
-		{
-			printf("%c",(char)TempCh);
-		}
+//		TempCh = RngGet(&RxBufpt);
+//		if(TempCh != EOF)
+//		{
+//			printf("%c",(char)TempCh);
+//		}
 	}
 	//Should never end up here
 }
