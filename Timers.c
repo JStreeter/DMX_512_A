@@ -15,7 +15,10 @@
 #include "driverlib/timer.h"
 #include "driverlib/interrupt.h"
 #include "inc/hw_types.h"
+#include "inc/hw_uart.h"
+#include "driverlib/uart.h"
 #include "inc/hw_gpio.h"
+#include "driverlib/udma.h"
 #include <stdio.h>
 ////////////////////////////////////////////////////////////////////////////////
 	// EXTERNALS
@@ -33,8 +36,33 @@
 	// FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////
 void TIMER0A_Handler()
-{
-	//HWREGBITW(GPIOE_BASE + GPIO_O_DATA + 0x3FC,1<<3) = HWREGBITW(GPIOF_BASE + GPIO_O_DATA + 0x3FC,1<<3) ^ 1;
+{	
 	TimerIntClear(TIMER0_BASE,TIMER_TIMA_TIMEOUT);//TIMER TIME OUT
+
+	if(LastPingPongSemaphore != PingPongSemaphore)
+	{
+		if(PingPongSemaphore == 0)
+		{
+		uDMAChannelTransferSet( UDMA_CHANNEL_UART0TX | UDMA_PRI_SELECT, UDMA_MODE_BASIC,
+									PingDMX,
+									(void *)(UART0_BASE + UART_O_DR),
+									513);
+		}
+		else
+		{
+		uDMAChannelTransferSet( UDMA_CHANNEL_UART0TX | UDMA_PRI_SELECT, UDMA_MODE_BASIC,
+									PongDMX,
+									(void *)(UART0_BASE + UART_O_DR),
+									513);
+		}
+	}
+	
+	LastPingPongSemaphore = PingPongSemaphore;
+	uDMAChannelEnable(UDMA_CHANNEL_UART0TX);
+	UARTDMAEnable(UART0_BASE, UART_DMA_TX);
+	uDMAChannelRequest(UDMA_CHANNEL_UART0TX);
+	
+
+	
 	Semaphore = 1;
 }

@@ -19,16 +19,15 @@
 #include "inc/hw_ints.h"
 #include "inc/hw_ssi.h"
 
+
 #define MEM_BUFFER_SIZE 1024
-static unsigned long 	g_ulSrcBuf[MEM_BUFFER_SIZE];
-static unsigned long 	g_ulDstBuf[MEM_BUFFER_SIZE];
 unsigned char 			pui8DMAControlTable[1024]__attribute__((aligned (1024*8)));//THIS IS REQUIRED FOR DMA DO NOT ASK
 
 
-volatile U8			UartRingBuffer[MAXRINGBUFSIZE]; //Max length of NEMA sentece is 80 and the max STX is 154
-volatile U16			HIndex, TIndex;			//Internal Indexs
-volatile U8 TxReady;
-uint8_t pui8DMAControlTable[1024];//THIS IS REQUIRED FOR DMA DO NOT ASK
+volatile U8		UartRingBuffer[MAXRINGBUFSIZE]; //Max length of NEMA sentece is 80 and the max STX is 154
+volatile U16	HIndex, TIndex;			//Internal Indexs
+volatile U8 	TxReady;
+uint8_t 		pui8DMAControlTable[1024];//THIS IS REQUIRED FOR DMA DO NOT ASK. DO NOT CHANGE. DO NOT MOVE
 
 /*----------------------------------------------------------------------------
   Write character to Serial Port
@@ -212,24 +211,6 @@ void UartWrite(U8 *DataToSend, U16 Length)
 	full table for all modes and channels.
 	NOTE: This table must be 1024-byte aligned.*/
 	//
-//	U16 x;
-	
-	//
-	
-//	uint8_t pui8SourceBuffer[256];
-//	uint8_t pui8DestBuffer[256];
-	//
-	// Enable the uDMA controller.
-	//
-//	for(x=0;x<=255;x++)
-//	{
-//		pui8SourceBuffer[x] = 'A';
-//		pui8DestBuffer[x] = 0;
-//		//printf("%02X|%02X ",pui8SourceBuffer[x],pui8DestBuffer[x]);
-//		printf("%02X",pui8SourceBuffer[x]);
-//		if( (x+1) % 32 == 0)
-//			printf("\r\n");
-//	}
 	printf("\r\n\n\n\n\n");
 	printf("-------------------------------------------------------------------\r\n");
 	uDMAEnable();
@@ -274,27 +255,27 @@ void UartWrite(U8 *DataToSend, U16 Length)
 void
 InitSWTransfer(void)
 {
-	unsigned int uIdx;
-	
-	for(uIdx = 0; uIdx < 1024; uIdx++)
-	{
-		g_ulSrcBuf[uIdx] = uIdx;
-	}
-	
-	uDMAChannelAttributeDisable(UDMA_CHANNEL_UART0TX, UDMA_ATTR_ALL);
-	uDMAChannelControlSet(  UDMA_CHANNEL_UART0TX    |
-                                UDMA_PRI_SELECT,
-                                UDMA_SIZE_8             |
-                                UDMA_SRC_INC_8          |
-                                UDMA_DST_INC_NONE       |
-                                UDMA_ARB_1              );
-		
-	UARTIntEnable(UART0_BASE,UART_INT_DMATX);
-	uDMAChannelEnable(UDMA_CHANNEL_SSI1RX);
-	SSIDMAEnable(SSI3_BASE, UART_DMA_RX);
-	
-	uDMAChannelEnable(UDMA_CHANNEL_SSI1RX);
-	SSIDMAEnable(SSI3_BASE, UART_DMA_RX);
+//	unsigned int uIdx;
+//	
+//	for(uIdx = 0; uIdx < 1024; uIdx++)
+//	{
+//		g_ulSrcBuf[uIdx] = uIdx;
+//	}
+//	
+//	uDMAChannelAttributeDisable(UDMA_CHANNEL_UART0TX, UDMA_ATTR_ALL);
+//	uDMAChannelControlSet(  UDMA_CHANNEL_UART0TX    |
+//                                UDMA_PRI_SELECT,
+//                                UDMA_SIZE_8             |
+//                                UDMA_SRC_INC_8          |
+//                                UDMA_DST_INC_NONE       |
+//                                UDMA_ARB_1              );
+//		
+//	UARTIntEnable(UART0_BASE,UART_INT_DMATX);
+//	uDMAChannelEnable(UDMA_CHANNEL_SSI1RX);
+//	SSIDMAEnable(SSI3_BASE, UART_DMA_RX);
+//	
+//	uDMAChannelEnable(UDMA_CHANNEL_SSI1RX);
+//	SSIDMAEnable(SSI3_BASE, UART_DMA_RX);
 //	
 //	IntEnable(INT_UDMA);
 //	uDMAChannelAttributeDisable(UDMA_CHANNEL_SW, UDMA_ATTR_ALL);

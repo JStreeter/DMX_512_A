@@ -50,7 +50,7 @@ FILE __stdout;
 	//  CONSTANTS
 ////////////////////////////////////////////////////////////////////////////////
 #define PULSETEST      (*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 1*4)))
- 
+
 ////////////////////////////////////////////////////////////////////////////////
 	// FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////
@@ -61,7 +61,6 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	//Main set
 	SysCtlClockSet(SYSCTL_SYSDIV_4|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN);
 	//SysCtlClockSet(SYSCTL_SYSDIV_8|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN);
-	
 	
 	//Perhial Clock enable
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);//UART0Pins
@@ -169,29 +168,38 @@ int main(void)
 {
     U32 lfsr = 0xAAAAu;/* Any nonzero start state will work. */
     U32	Time;
-	U16	In,Old;
 	volatile S16 TempCh;
-	U16 RxBufpt;
+	U16 In,RxBufpt;
 	volatile U32 BaseTime = TimeDebug1;
 	unsigned bit;
-	U8 Rand;
-	U8 BLAH[256];
-	U8 Short[16],RunOnce;
-	U16 x;
+	U8 BLAH[256],RunOnce;
+
 	
 	RunOnce = 0;
 		// Display greeting
 //	
 	UARTIntEnable(UART0_BASE,UART_INT_RX);
 //	UARTIntEnable(UART1_BASE,UART_INT_DMATX);
-
+	IntGlobals();
+	
 	SSIIntEnable(SSI3_BASE,SSI_RXFF);
 	TimerIntEnable(TIMER0_BASE,TIMER_TIMA_TIMEOUT);	
 
 	IntEnable(INT_UART0);
 	IntEnable(INT_TIMER0A);
+
+//	uDMAChannelTransferSet( UDMA_CHANNEL_UART0TX | UDMA_PRI_SELECT,
+//								UDMA_MODE_BASIC,
+//								BLAH,
+//								(void *)(UART0_BASE + UART_O_DR),
+//								strlen((char*)&BLAH[0]));
+	uDMAChannelEnable(UDMA_CHANNEL_UART0TX);
+	UARTDMAEnable(UART0_BASE, UART_DMA_TX);
 	
 	IntMasterEnable();
+	
+//	uDMAChannelEnable(UDMA_CHANNEL_UART0TX);
+//	UARTDMAEnable(UART0_BASE, UART_DMA_TX);
 	
 	Time = SysCtlClockGet();
 	TimerEnable(TIMER0_BASE, TIMER_BOTH);
@@ -199,8 +207,8 @@ int main(void)
 	//printf("The tick counter then is %f\r\n",1.0);
 	RngFlush(&RxBufpt);
 	
-	TimerLoadSet(TIMER0_BASE,TIMER_A,TimeDebug1<<3);//API says to use the Timer A if full width
-	TimerEnable(TIMER0_BASE, TIMER_BOTH);
+	//TimerLoadSet(TIMER0_BASE,TIMER_A,TimeDebug1<<3);//API says to use the Timer A if full width
+	//TimerEnable(TIMER0_BASE, TIMER_BOTH);
 	Semaphore = 0;
 	
 	GPIOPinWrite(GPIOF_BASE, GPIO_PIN_3, 0xFF);//Write to the pins
@@ -216,29 +224,17 @@ int main(void)
 	
 	while(GPIOPinRead(GPIOF_BASE, GPIO_PIN_4));//Wait of user
 	GPIOPinWrite(GPIOF_BASE, GPIO_PIN_2, 0x00);//Write to the pins
-	Old = 0;
+	PingPongSemaphore =0;
 	DMA_Setup_UART1();
-//	for(x=0;x<256;x++)
-//	{
-//			BLAH[x] = 'b';
-//	}
-	Rand = sprintf((char*)&BLAH[0],"This is the exact message that I am printing.\r\n\0");
+
+	sprintf((char*)&BLAH[0],"This is the exact message that I am printing.\r\n");
 	printf("%s",BLAH);
 	In =  ReadAddessEXIO();
+	PingPongSemaphore = 0;
+	
 	while(1)
-	{	
-		
-//		if(UART1->RIS & UART_RIS_TXRIS)
-//		{
-//			 UART1->DR  = Rand++;
-//		}
-		
+	{			
 		In =  ReadAddessEXIO();
-//		if(Old != In)
-//		{
-//			printf("In = %03X \r\n",In);
-//			Old = In;
-//		}
 
 		if( !uDMAChannelIsEnabled(UDMA_CHANNEL_UART0TX) ) 
 		{
@@ -247,23 +243,17 @@ int main(void)
 		
 		if(!GPIOPinRead(GPIOF_BASE, GPIO_PIN_4) && RunOnce == 0)
 		{
-			RunOnce = 1;
-			uDMAChannelTransferSet( UDMA_CHANNEL_UART0TX | UDMA_PRI_SELECT,
-										UDMA_MODE_BASIC,
-										BLAH,
-										(void *)(UART0_BASE + UART_O_DR),
-										strlen((char*)&BLAH[0]));
-			uDMAChannelEnable(UDMA_CHANNEL_UART0TX);
-			UARTDMAEnable(UART0_BASE, UART_DMA_TX);
-			uDMAChannelRequest(UDMA_CHANNEL_UART0TX);
+			PingPongSemaphore ^= 1;
+//			RunOnce = 1;
+//			uDMAChannelTransferSet( UDMA_CHANNEL_UART0TX | UDMA_PRI_SELECT,
+//										UDMA_MODE_BASIC,
+//										BLAH,
+//										(void *)(UART0_BASE + UART_O_DR),
+//										strlen((char*)&BLAH[0]));
+//			uDMAChannelEnable(UDMA_CHANNEL_UART0TX);
+//			UARTDMAEnable(UART0_BASE, UART_DMA_TX);
+//			uDMAChannelRequest(UDMA_CHANNEL_UART0TX);
 		}
-		
-		
-		
-//		if()
-//		{
-//		
-//		}
 		
 		WriteOutIOEX(lfsr | In);
 		
