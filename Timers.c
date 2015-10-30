@@ -39,24 +39,21 @@ void TIMER0A_Handler()
 {	
 	TimerIntClear(TIMER0_BASE,TIMER_TIMA_TIMEOUT);//TIMER TIME OUT
 
-	if(LastPingPongSemaphore != PingPongSemaphore)
+	if(PingPongSemaphore == 0)
 	{
-		if(PingPongSemaphore == 0)
-		{
-		uDMAChannelTransferSet( UDMA_CHANNEL_UART0TX | UDMA_PRI_SELECT, UDMA_MODE_BASIC,
-									PingDMX,
-									(void *)(UART0_BASE + UART_O_DR),
-									513);
-		}
-		else
-		{
-		uDMAChannelTransferSet( UDMA_CHANNEL_UART0TX | UDMA_PRI_SELECT, UDMA_MODE_BASIC,
-									PongDMX,
-									(void *)(UART0_BASE + UART_O_DR),
-									513);
-		}
+	uDMAChannelTransferSet( UDMA_CHANNEL_UART0TX | UDMA_PRI_SELECT, UDMA_MODE_BASIC,
+								PingDMX,
+								(void *)(UART0_BASE + UART_O_DR),
+								513);
 	}
-	
+	else
+	{
+	uDMAChannelTransferSet( UDMA_CHANNEL_UART0TX | UDMA_PRI_SELECT, UDMA_MODE_BASIC,
+								PongDMX,
+								(void *)(UART0_BASE + UART_O_DR),
+								513);
+	}
+	8005921137
 	LastPingPongSemaphore = PingPongSemaphore;
 	uDMAChannelEnable(UDMA_CHANNEL_UART0TX);
 	UARTDMAEnable(UART0_BASE, UART_DMA_TX);
