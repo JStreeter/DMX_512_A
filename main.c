@@ -75,7 +75,8 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	
 	SysCtlGPIOAHBDisable(SYSCTL_PERIPH_GPIOF);
 	
-	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);//Timer 0
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);//Timer 0//Short time
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER1);//Timer 1
 
     // Set GPIO ports to use APB (not needed since default configuration -- for clarity)
     // Note UART on port A must use APB
@@ -107,9 +108,10 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
    	// Configure UART0 to 115200 baud, 8N1 format (must be 3 clocks from clock enable and config writes)
 	UARTEnable(UART0_BASE);
 	UARTClockSourceSet(UART0_BASE,UART_CLOCK_SYSTEM);
-	UARTConfigSetExpClk(UART0_BASE, SysCtlClockGet(), DebugBaud, UART_CONFIG_WLEN_8 | UART_CONFIG_PAR_NONE | UART_CONFIG_STOP_ONE);
+/*DEBUG*///	UARTConfigSetExpClk(UART0_BASE, SysCtlClockGet(), DebugBaud, UART_CONFIG_WLEN_8 | UART_CONFIG_PAR_NONE | UART_CONFIG_STOP_ONE);
+	UARTConfigSetExpClk(UART0_BASE, SysCtlClockGet(), DMXBAUD, UART_CONFIG_WLEN_8 | UART_CONFIG_PAR_NONE | UART_CONFIG_STOP_ONE);
+		
 	UARTFIFODisable(UART0_BASE);
-	//UARTFIFOLevelSet(UART0_BASE, UART_FIFO_TX1_8,UART_FIFO_RX1_8);
 //END/////////////Debug//////////////////////////////////////////////////////////////////////////////////
 	
 ///////////////DMX-512-A/////////////////////////////////////////////////////////////////////////////////////	
@@ -130,16 +132,20 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 //END/////////////DMX-512-A//////////////////////////////////////////////////////////////////////////////////
 
 //TIMER//
+/////////TIMER 0/////////
 	TimerConfigure(TIMER0_BASE,TIMER_CFG_ONE_SHOT);
 	TimerClockSourceSet(TIMER0_BASE,TIMER_CLOCK_SYSTEM);
 	TimerLoadSet(TIMER0_BASE,TIMER_A,TimeDebug1);//API says to use the Timer A if full width
-//	IntRegister(INT_TIMER0A, UART0Handler);
-//	IntRegister(INT_UART0, UART0Handler);
-//	TimerIntRegister(TIMER0_BASE,TIMER_BOTH,TIMER0A_Handler);
+///////END TIMER 0///////
+/////////TIMER 1/////////
+	TimerConfigure(TIMER1_BASE,TIMER_CFG_PERIODIC);
+	TimerClockSourceSet(TIMER1_BASE,TIMER_CLOCK_SYSTEM);
+	TimerLoadSet(TIMER1_BASE,TIMER_A,TimeDebug1);//API says to use the Timer A if full width
+///////END TIMER 1///////
 //END TIMER//
 	IntPrioritySet(INT_UART0, 0x05);
 	IntPrioritySet(INT_SSI3, 0x10);
-	SpiSetup();
+	
 	HIndex = 0;
 	TIndex = 0;	
 	
@@ -170,50 +176,53 @@ int main(void)
     U32	Time;
 	volatile S16 TempCh;
 	U16 In,RxBufpt;
+	U16 Buffer[5];
 	volatile U32 BaseTime = TimeDebug1;
-	unsigned bit;
-	U8 BLAH[256],RunOnce;
+//	unsigned bit;
+	U8 BLAH[256],RunOnce, x;
 
-	
 	RunOnce = 0;
-		// Display greeting
-//	
-	UARTIntEnable(UART0_BASE,UART_INT_RX);
-//	UARTIntEnable(UART1_BASE,UART_INT_DMATX);
-	IntGlobals();
+	// Display greeting
 	
-	SSIIntEnable(SSI3_BASE,SSI_RXFF);
+	UARTIntEnable(UART0_BASE,UART_INT_RX);
+	IntGlobals();//
+	
+	//
 	TimerIntEnable(TIMER0_BASE,TIMER_TIMA_TIMEOUT);	
+	TimerIntEnable(TIMER1_BASE,TIMER_TIMA_TIMEOUT);	
 
-	IntEnable(INT_UART0);
-	IntEnable(INT_TIMER0A);
+	IntEnable(INT_UART0);//DEBUG PORT
+	IntEnable(INT_TIMER0A);//The Break Before Make timer
+	IntEnable(INT_TIMER1A);// 40 hertz
 
-//	uDMAChannelTransferSet( UDMA_CHANNEL_UART0TX | UDMA_PRI_SELECT,
-//								UDMA_MODE_BASIC,
-//								BLAH,
-//								(void *)(UART0_BASE + UART_O_DR),
-//								strlen((char*)&BLAH[0]));
 	uDMAChannelEnable(UDMA_CHANNEL_UART0TX);
 	UARTDMAEnable(UART0_BASE, UART_DMA_TX);
 	
 	IntMasterEnable();
-	
-//	uDMAChannelEnable(UDMA_CHANNEL_UART0TX);
-//	UARTDMAEnable(UART0_BASE, UART_DMA_TX);
-	
+		
 	Time = SysCtlClockGet();
 	TimerEnable(TIMER0_BASE, TIMER_BOTH);
 	
-	//printf("The tick counter then is %f\r\n",1.0);
 	RngFlush(&RxBufpt);
 	
-	//TimerLoadSet(TIMER0_BASE,TIMER_A,TimeDebug1<<3);//API says to use the Timer A if full width
-	//TimerEnable(TIMER0_BASE, TIMER_BOTH);
 	Semaphore = 0;
 	
+	TIMER1->TAILR = 1250000;//1 / 40 
+	TIMER1->CTL |= TIMER_CTL_TAEN | TIMER_CTL_TBEN;
+	
 	GPIOPinWrite(GPIOF_BASE, GPIO_PIN_3, 0xFF);//Write to the pins
-	while(Semaphore == 0);
-	TimerLoadSet(TIMER0_BASE,TIMER_A,TimeDebug1);//API says to use the Timer A if full width
+	x = 0;
+	SpiSetup();
+	SSIIntEnable(SSI3_BASE,SSI_RXFF);
+	while(x < 20)
+	{
+		
+		if(Semaphore == 1)
+		{
+			Semaphore = 0;
+			x++;
+		}
+	}
 	GPIOPinWrite(GPIOF_BASE, GPIO_PIN_3, 0x00);//Write to the pins
 
 	printf("\r\nHello World\r\n");	
@@ -224,7 +233,9 @@ int main(void)
 	
 	while(GPIOPinRead(GPIOF_BASE, GPIO_PIN_4));//Wait of user
 	GPIOPinWrite(GPIOF_BASE, GPIO_PIN_2, 0x00);//Write to the pins
+
 	PingPongSemaphore =0;
+
 	DMA_Setup_UART1();
 
 	sprintf((char*)&BLAH[0],"This is the exact message that I am printing.\r\n");
@@ -232,37 +243,41 @@ int main(void)
 	In =  ReadAddessEXIO();
 	PingPongSemaphore = 0;
 	
+
+	TIMER1->TAILR = 1250000;//1 / 40 
+	TIMER1->CTL |= TIMER_CTL_TAEN | TIMER_CTL_TBEN;
+	lfsr =0xFFFF;
 	while(1)
 	{			
-		In =  ReadAddessEXIO();
+		
+		Buffer[0] = IO_Ex_Read | IO_Ex_0_GPIOA;
+		Buffer[1] = 0x0000;
+		ExIO(Buffer,2);
+		
+		printf("In = %04X\r\n",Buffer[1]);
+		//In =  ReadAddessEXIO();
 
-		if( !uDMAChannelIsEnabled(UDMA_CHANNEL_UART0TX) ) 
-		{
-			RunOnce = 0;
-		}
+//		if( !uDMAChannelIsEnabled(UDMA_CHANNEL_UART0TX) ) 
+//		{
+//			RunOnce = 0;
+//		}
 		
 		if(!GPIOPinRead(GPIOF_BASE, GPIO_PIN_4) && RunOnce == 0)
 		{
 			PingPongSemaphore ^= 1;
-//			RunOnce = 1;
-//			uDMAChannelTransferSet( UDMA_CHANNEL_UART0TX | UDMA_PRI_SELECT,
-//										UDMA_MODE_BASIC,
-//										BLAH,
-//										(void *)(UART0_BASE + UART_O_DR),
-//										strlen((char*)&BLAH[0]));
-//			uDMAChannelEnable(UDMA_CHANNEL_UART0TX);
-//			UARTDMAEnable(UART0_BASE, UART_DMA_TX);
-//			uDMAChannelRequest(UDMA_CHANNEL_UART0TX);
 		}
 		
 		WriteOutIOEX(lfsr | In);
 		
 		if(	Semaphore != 0)
 		{	
-			TimerEnable(TIMER0_BASE, TIMER_BOTH);
+			//TimerEnable(TIMER0_BASE, TIMER_BOTH);
+			TIMER0->CTL |= TIMER_CTL_TAEN | TIMER_CTL_TBEN;
 			Semaphore = 0;
-			bit  = ((lfsr >> 0) ^ (lfsr >> 2) ^ (lfsr >> 3) ^ (lfsr >> 5) ) & 1;
-			lfsr =  (lfsr >> 1) | (bit << 15);
+			lfsr ^= 0xFFFF;
+			
+//			bit  = ((lfsr >> 0) ^ (lfsr >> 2) ^ (lfsr >> 3) ^ (lfsr >> 5) ) & 1;
+//			lfsr =  (lfsr >> 1) | (bit << 15);
 		}
 //		
 //		TempCh = RngGet(&RxBufpt);

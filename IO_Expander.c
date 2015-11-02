@@ -1,25 +1,15 @@
 #include <main.h>
-//#include <stdint.h>
 #include <stdio.h>
 #include "TM4C123GH6PM.h"                    // Device header
-//#include "Serial.h"
-//#include "inc/hw_ints.h"
-//#include "inc/hw_nvic.h"
 #include "inc/hw_sysctl.h"
 #include "inc/hw_types.h"
 #include "inc/hw_ssi.h"
-//#include "inc/hw_flash.h"
-//#include "inc/hw_timer.h"
 #include "inc/hw_gpio.h"
 
-//#include "driverlib/cpu.h"
-//#include "driverlib/debug.h"
 #include "driverlib/interrupt.h"
 #include "driverlib/sysctl.h"
 #include "driverlib/gpio.h"
-//#include "driverlib/uart.h"
 #include "driverlib/pin_map.h"
-//#include "driverlib/timer.h"
 #include "driverlib/ssi.h"
 #include "driverlib/udma.h"
 #include <string.h>
@@ -44,7 +34,12 @@
 	U32 temp;
 //	SSIDMAEnable(SSI3_BASE, SSI_DMA_RX | SSI_DMA_TX);
 //	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0x00);//Write to the pins
-	
+	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0xFF);//Write to the pins
+	__NOP;
+	__NOP;
+	__NOP;
+	__NOP;
+	__NOP;
 	do
 	{
 		SSIDataPut(SSI3_BASE,(U32)BuffOut[index]);
@@ -53,7 +48,12 @@
 		SSIDataGet(SSI3_BASE,&temp);
 		BuffIn[index] = (U16)temp;
 	}while(index++ < Length);
-
+	__NOP;
+	__NOP;
+	__NOP;
+	__NOP;
+	__NOP;
+	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0x00);//Write to the pins
 //	SSIDMADisable(SSI3_BASE,SSI_DMA_RX | SSI_DMA_TX);
 //	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0xFF);//Write to the pins
 	return;
@@ -68,47 +68,74 @@
     // The SSI0 peripheral is on Port A and pins 2,3,4 and 5.
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
  
+	GPIOPadConfigSet(GPIOD_BASE,GPIO_PIN_0,GPIO_STRENGTH_8MA,GPIO_PIN_TYPE_STD);
+	GPIODirModeSet(GPIOD_BASE,GPIO_PIN_0,GPIO_DIR_MODE_HW);
+	
+	GPIOPadConfigSet(GPIOD_BASE,GPIO_PIN_2,GPIO_STRENGTH_8MA,GPIO_PIN_TYPE_STD);
+	GPIODirModeSet(GPIOD_BASE,GPIO_PIN_2,GPIO_DIR_MODE_HW);
+	
+	GPIOPadConfigSet(GPIOD_BASE,GPIO_PIN_3,GPIO_STRENGTH_8MA,GPIO_PIN_TYPE_STD);
+	GPIODirModeSet(GPIOD_BASE,GPIO_PIN_3,GPIO_DIR_MODE_HW);
+ 
     GPIOPinConfigure(GPIO_PD0_SSI3CLK);
-//    GPIOPinConfigure(GPIO_PD1_SSI3FSS);
     GPIOPinConfigure(GPIO_PD2_SSI3RX);//MISO
     GPIOPinConfigure(GPIO_PD3_SSI3TX);//MOSI
  
     // Configures the pins for use by the SSI, takes 2 parameters
-    GPIOPinTypeSSI(GPIOD_BASE, GPIO_PIN_3 | GPIO_PIN_2 | /*GPIO_PIN_1 | */GPIO_PIN_0);
+    GPIOPinTypeSSI(GPIOD_BASE, GPIO_PIN_3 | GPIO_PIN_2 | GPIO_PIN_0);
 
 	SSIClockSourceSet(SSI3_BASE, SSI_CLOCK_SYSTEM);
-	SSIConfigSetExpClk(SSI3_BASE, SysCtlClockGet(),	SSI_FRF_MOTO_MODE_0, SSI_MODE_MASTER, SysCtlClockGet() / 1024, 16);
-	SSIAdvModeSet(SSI3_BASE, SSI_ADV_MODE_LEGACY);
+	SSIConfigSetExpClk(SSI3_BASE, SysCtlClockGet(),	SSI_FRF_MOTO_MODE_0, SSI_MODE_MASTER, 10000, 16);
+//	SSIAdvModeSet(SSI3_BASE, SSI_ADV_MODE_LEGACY);
 	
 	
 	SSIEnable(SSI3_BASE);
-	
-		GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0xFF);//Write to the pins
-
+while(1)
+{
 	Buffer[0] = IO_Ex_Write | IO_Ex_0_IOCON;									//WRITE
-	Buffer[1] = 0x0404;
-	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0x00);//Write to the pins
+	Buffer[1] = 0x0404;	
 	ExIO(Buffer,2);
-	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0xFF);//Write to the pins
 
 	Buffer[0] = IO_Ex_Write | IO_Ex_0_GPPUA;									//WRITE
-	Buffer[1] = 0xFFFF;
-	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0x00);//Write to the pins
+	Buffer[1] = 0x01FF;
 	ExIO(Buffer,2);
-	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0xFF);//Write to the pins
 	
 	Buffer[0] = IO_Ex_Write | IO_Ex_0_IODIRA;									//WRITE
-	Buffer[1] = 0xFF01;
-	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0x00);//Write to the pins
+	Buffer[1] = 0x01FF;
 	ExIO(Buffer,2);
-	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0xFF);//Write to the pins
 	
 	Buffer[0] = IO_Ex_Write | IO_Ex_0_OLATA;// IO_Ex_0_IODIRA;		
-	Buffer[1] =  0xFF80;
-	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0x00);//Write to the pins
+	Buffer[1] = ~(0x01FF) ;
 	ExIO(Buffer,2);
-	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0xFF);//Write to the pin
-	
+
+//////////////////////////
+	Buffer[0] = IO_Ex_Read | IO_Ex_0_IOCON;									//WRITE
+	Buffer[1] = 0;	
+	ExIO(Buffer,2);
+	printf("IO_Ex_0_IOCON  %04X-> %04X\r\n",IO_Ex_Read | IO_Ex_0_IOCON,Buffer[1]);
+//////////////////////////
+
+//////////////////////////
+	Buffer[0] = IO_Ex_Read | IO_Ex_0_GPPUA;									//WRITE
+	Buffer[1] = 0;	
+	ExIO(Buffer,2);
+	printf("IO_Ex_0_GPPUA  %04X-> %04X\r\n",IO_Ex_Read | IO_Ex_0_GPPUA,Buffer[1]);
+//////////////////////////
+
+//////////////////////////
+	Buffer[0] = IO_Ex_Read | IO_Ex_0_IODIRA;									//WRITE
+	Buffer[1] = 0;	
+	ExIO(Buffer,2);
+	printf("IO_Ex_0_IODIRA %04X-> %04X\r\n",IO_Ex_Read | IO_Ex_0_IODIRA,Buffer[1]);
+//////////////////////////
+
+//////////////////////////
+	Buffer[0] = IO_Ex_Read | IO_Ex_0_OLATA;									//WRITE
+	Buffer[1] = 0;	
+	ExIO(Buffer,2);
+	printf("IO_Ex_0_OLATA  %04X-> %04X\r\n",IO_Ex_Read | IO_Ex_0_OLATA,Buffer[1]);
+//////////////////////////	
+}
 	return;
  }
  
@@ -169,20 +196,16 @@
 	U8 RV = 0;
 	Buffer[0] = IO_Ex_Read | IO_Ex_0_GPIOA;
 	Buffer[1] = 0x0000;
-	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0x00);//Write to the pins
 	ExIO(Buffer,2);
-	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0xFF);//Write to the pins
 	RV = (Buffer[1] >> 8) & 0x01FF;
 	return RV;
  }
  
  void WriteOutIOEX(U16 output)
  {
-	U16 Buffer[3];
+	U16 Buffer[3];	
 	Buffer[0] = IO_Ex_Write | IO_Ex_0_OLATA;// IO_Ex_0_IODIRA;		
 	Buffer[1] =  ((~output) & 0x007F) | 0xFF80;
-	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0x00);//Write to the pins
 	ExIO(Buffer,2);
-	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0xFF);//Write to the pins
 	return;
  }

@@ -20,6 +20,7 @@
 #include "inc/hw_gpio.h"
 #include "driverlib/udma.h"
 #include <stdio.h>
+#include "driverlib/gpio.h"
 ////////////////////////////////////////////////////////////////////////////////
 	// EXTERNALS
 ////////////////////////////////////////////////////////////////////////////////
@@ -37,29 +38,52 @@
 ////////////////////////////////////////////////////////////////////////////////
 void TIMER0A_Handler()
 {	
+	static U8 StateOfLevels = 0;
 	TimerIntClear(TIMER0_BASE,TIMER_TIMA_TIMEOUT);//TIMER TIME OUT
-
-	if(PingPongSemaphore == 0)
+	//110 uS have already Passed.
+	//OR
+	//14 uS have passed and the data should shart sending
+	if(StateOfLevels == 0)
 	{
-	uDMAChannelTransferSet( UDMA_CHANNEL_UART0TX | UDMA_PRI_SELECT, UDMA_MODE_BASIC,
-								PingDMX,
-								(void *)(UART0_BASE + UART_O_DR),
-								513);
+		//Release the TX line
+		TIMER0->TAILR = 750; // 12 uSeconds
+		TIMER0->CTL |= TIMER_CTL_TAEN | TIMER_CTL_TBEN;
+		StateOfLevels = 1;
 	}
 	else
 	{
-	uDMAChannelTransferSet( UDMA_CHANNEL_UART0TX | UDMA_PRI_SELECT, UDMA_MODE_BASIC,
-								PongDMX,
-								(void *)(UART0_BASE + UART_O_DR),
-								513);
-	}
-	8005921137
-	LastPingPongSemaphore = PingPongSemaphore;
-	uDMAChannelEnable(UDMA_CHANNEL_UART0TX);
-	UARTDMAEnable(UART0_BASE, UART_DMA_TX);
-	uDMAChannelRequest(UDMA_CHANNEL_UART0TX);
-	
+//		StateOfLevels = 0;
+//		if(PingPongSemaphore == 0)
+//		{
+//			uDMAChannelTransferSet( UDMA_CHANNEL_UART0TX | UDMA_PRI_SELECT, UDMA_MODE_BASIC,
+//									PingDMX,
+//									(void *)(UART0_BASE + UART_O_DR),
+//									513);
+//		}
+//		else
+//		{
+//			uDMAChannelTransferSet( UDMA_CHANNEL_UART0TX | UDMA_PRI_SELECT, UDMA_MODE_BASIC,
+//									PongDMX,
+//									(void *)(UART0_BASE + UART_O_DR),
+//									513);
+//		}
+//		
+//		LastPingPongSemaphore = PingPongSemaphore;
+//		uDMAChannelEnable(UDMA_CHANNEL_UART0TX);
+//		UARTDMAEnable(UART0_BASE, UART_DMA_TX);
+//		uDMAChannelRequest(UDMA_CHANNEL_UART0TX);
+	}	
 
+	return;
+}
+
+void TIMER1A_Handler()// 1/ 40 Seconds
+{
+	TimerIntClear(TIMER1_BASE,TIMER_TIMA_TIMEOUT);//TIMER TIME OUT
+	//Set the Time 0 and drop the TX line
+	//Auto Resets
+	TIMER0->TAILR = 5600; // 112 uSeconds
+	TIMER0->CTL |= TIMER_CTL_TAEN | TIMER_CTL_TBEN;
 	
 	Semaphore = 1;
 }
