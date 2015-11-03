@@ -21,6 +21,7 @@
 #include "inc/hw_timer.h"
 #include "inc/hw_gpio.h"
 #include "inc/hw_ssi.h"
+#include "inc/hw_uart.h"
 
 #include "driverlib/interrupt.h"
 #include "driverlib/cpu.h"
@@ -32,6 +33,7 @@
 #include "driverlib/pin_map.h"
 #include "driverlib/timer.h"
 #include "driverlib/ssi.h"
+#include "driverlib/udma.h"
 #include <string.h>
 
 #include "IO_Expander.h"
@@ -47,8 +49,7 @@ FILE __stdout;
 ////////////////////////////////////////////////////////////////////////////////
 	//  CONSTANTS
 ////////////////////////////////////////////////////////////////////////////////
-#define PULSETEST      (*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 1*4)))
- 
+
 ////////////////////////////////////////////////////////////////////////////////
 	// FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////
@@ -58,19 +59,23 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 {
 	//Main set
 	SysCtlClockSet(SYSCTL_SYSDIV_4|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN);
+	//SysCtlClockSet(SYSCTL_SYSDIV_8|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN);
 	
 	//Perhial Clock enable
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);//UART0Pins
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);//UART1Pins
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC);//UART1Pins
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);//UART1Pins
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);//Leds Push Buttons
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);//Leds Push Buttons
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);//A0,A1
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_UART1);//B0,B1
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_UDMA);
 	
-	SysCtlGPIOAHBEnable(SYSCTL_PERIPH_GPIOF);
+	SysCtlGPIOAHBDisable(SYSCTL_PERIPH_GPIOF);
 	
-	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);//Timer 0
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);//Timer 0//Short time
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER1);//Timer 1
 
     // Set GPIO ports to use APB (not needed since default configuration -- for clarity)
     // Note UART on port A must use APB
@@ -102,36 +107,44 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
    	// Configure UART0 to 115200 baud, 8N1 format (must be 3 clocks from clock enable and config writes)
 	UARTEnable(UART0_BASE);
 	UARTClockSourceSet(UART0_BASE,UART_CLOCK_SYSTEM);
-	UARTConfigSetExpClk(UART0_BASE, SysCtlClockGet(), DebugBaud, UART_CONFIG_WLEN_8 | UART_CONFIG_PAR_NONE | UART_CONFIG_STOP_ONE);
+/*DEBUG*///	UARTConfigSetExpClk(UART0_BASE, SysCtlClockGet(), DebugBaud, UART_CONFIG_WLEN_8 | UART_CONFIG_PAR_NONE | UART_CONFIG_STOP_ONE);
+	UARTConfigSetExpClk(UART0_BASE, SysCtlClockGet(), DMXBAUD, UART_CONFIG_WLEN_8 | UART_CONFIG_PAR_NONE | UART_CONFIG_STOP_ONE);
+		
 	UARTFIFODisable(UART0_BASE);
-	//UARTFIFOLevelSet(UART0_BASE, UART_FIFO_TX1_8,UART_FIFO_RX1_8);
 //END/////////////Debug//////////////////////////////////////////////////////////////////////////////////
 	
 ///////////////DMX-512-A/////////////////////////////////////////////////////////////////////////////////////	
-	GPIOPinTypeUART(GPIOB_BASE,GPIO_PIN_0 | GPIO_PIN_1);
+	GPIOPinTypeUART(GPIOC_BASE,GPIO_PIN_5 | GPIO_PIN_4);
 	//
 	// Enable UART1 functionality on GPIO Port B pins 0 and 1.
 	//
-	GPIOPinConfigure(GPIO_PB0_U1RX);
-	GPIOPinConfigure(GPIO_PB1_U1TX);
-
+	
    	// Configure UART0 to 115200 baud, 8N1 format (must be 3 clocks from clock enable and config writes)
 	UARTEnable(UART1_BASE);
 	UARTClockSourceSet(UART1_BASE,UART_CLOCK_SYSTEM);
 	UARTConfigSetExpClk(UART1_BASE, SysCtlClockGet(), DMXBAUD, UART_CONFIG_WLEN_8 | UART_CONFIG_PAR_NONE | UART_CONFIG_STOP_TWO);
+	UARTFIFODisable(UART1_BASE);
+	
+	GPIOPinConfigure(GPIO_PC5_U1TX);
+	GPIOPinConfigure(GPIO_PC4_U1RX);
+
 //END/////////////DMX-512-A//////////////////////////////////////////////////////////////////////////////////
 
 //TIMER//
+/////////TIMER 0/////////
 	TimerConfigure(TIMER0_BASE,TIMER_CFG_ONE_SHOT);
 	TimerClockSourceSet(TIMER0_BASE,TIMER_CLOCK_SYSTEM);
 	TimerLoadSet(TIMER0_BASE,TIMER_A,TimeDebug1);//API says to use the Timer A if full width
-	//IntRegister(INT_TIMER0A, UART0Handler);
-//	IntRegister(INT_UART0, UART0Handler);
-//	TimerIntRegister(TIMER0_BASE,TIMER_BOTH,TIMER0A_Handler);
+///////END TIMER 0///////
+/////////TIMER 1/////////
+	TimerConfigure(TIMER1_BASE,TIMER_CFG_PERIODIC);
+	TimerClockSourceSet(TIMER1_BASE,TIMER_CLOCK_SYSTEM);
+	TimerLoadSet(TIMER1_BASE,TIMER_A,TimeDebug1);//API says to use the Timer A if full width
+///////END TIMER 1///////
 //END TIMER//
 	IntPrioritySet(INT_UART0, 0x05);
 	IntPrioritySet(INT_SSI3, 0x10);
-	SpiSetup();
+	
 	HIndex = 0;
 	TIndex = 0;	
 	
@@ -155,65 +168,118 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 //Minimum Packet is 24 data packets(Add padding)
 ////////////////////////////////////////////////////////////////////////////////
 #define GREEN_LED    (*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 3*4)))
+
 int main(void)
 {
-    U32 lfsr = 0xACE1u;/* Any nonzero start state will work. */
+    U32 lfsr = 0xAAAAu;/* Any nonzero start state will work. */
     U32	Time;
-	U16	In,Old;
-//	U8	Rand, Rand2, ReadTemp;
-	S16 TempCh;
-	U16 RxBufpt;
+	volatile S16 TempCh;
+	U16 In,RxBufpt;
+	U16 Buffer[5];
 	volatile U32 BaseTime = TimeDebug1;
 	unsigned bit;
-		// Display greeting
-	GPIOPinWrite(GPIOF_BASE, GPIO_PIN_1, 0xFF);//Write to the pins
-	
-	Semaphore = 0;
+	U8 BLAH[256],RunOnce, x;
+
+	RunOnce = 0;
+	// Display greeting
 	
 	UARTIntEnable(UART0_BASE,UART_INT_RX);
-	SSIIntEnable(SSI3_BASE,SSI_RXFF);
-	TimerIntEnable(TIMER0_BASE,TIMER_TIMA_TIMEOUT);
+	IntGlobals();//
 	
-	IntEnable(INT_UART0);
-	IntEnable(INT_TIMER0A);
+	//
+	TimerIntEnable(TIMER0_BASE,TIMER_TIMA_TIMEOUT);	
+	TimerIntEnable(TIMER1_BASE,TIMER_TIMA_TIMEOUT);	
+
+	IntEnable(INT_UART0);//DEBUG PORT
+	IntEnable(INT_TIMER0A);//The Break Before Make timer
+	IntEnable(INT_TIMER1A);// 40 hertz
+
+	uDMAChannelEnable(UDMA_CHANNEL_UART0TX);
+	UARTDMAEnable(UART0_BASE, UART_DMA_TX);
 	
 	IntMasterEnable();
-	
+		
 	Time = SysCtlClockGet();
 	TimerEnable(TIMER0_BASE, TIMER_BOTH);
 	
-	//printf("The tick counter then is %f\r\n",1.0);
 	RngFlush(&RxBufpt);
 	
+	Semaphore = 0;
+	
+	TIMER1->TAILR = 1250000;//1 / 40 
+	TIMER1->CTL |= TIMER_CTL_TAEN | TIMER_CTL_TBEN;
+	
+	GPIOPinWrite(GPIOF_BASE, GPIO_PIN_3, 0xFF);//Write to the pins
+	x = 0;
+	SpiSetup();
+	SSIIntEnable(SSI3_BASE,SSI_RXFF);
+	while(x < 20)
+	{
+		
+		if(Semaphore == 1)
+		{
+			Semaphore = 0;
+			x++;
+		}
+	}
+	GPIOPinWrite(GPIOF_BASE, GPIO_PIN_3, 0x00);//Write to the pins
+
 	printf("\r\nHello World\r\n");	
 	printf("The Clock is set to %d\r\n",Time);
-	while(GPIOPinRead(GPIOF_BASE, GPIO_PIN_4));//Wait of user
+	GPIOPinWrite(GPIOF_BASE, GPIO_PIN_2, 0xFF);//Write to the pins
+
+	printf("In = %03X \r\n",ReadAddessEXIO());
 	
-//	Rand = 0;
-//	ReadTemp =  0;
-	Old = 0;
-//	DMA_Setup_UART1();
+	while(GPIOPinRead(GPIOF_BASE, GPIO_PIN_4));//Wait of user
+	GPIOPinWrite(GPIOF_BASE, GPIO_PIN_2, 0x00);//Write to the pins
+
+	PingPongSemaphore =0;
+
+	DMA_Setup_UART1();
+
+	sprintf((char*)&BLAH[0],"This is the exact message that I am printing.\r\n");
+	printf("%s",BLAH);
+	In =  ReadAddessEXIO();
+	PingPongSemaphore = 0;
+	
+
+	TIMER1->TAILR = 1250000;//1 / 40 
+	TIMER1->CTL |= TIMER_CTL_TAEN | TIMER_CTL_TBEN;
+	lfsr =0xFFFF;
 	while(1)
-	{	
+	{			
+		
+		Buffer[0] = IO_Ex_Read | IO_Ex_0_GPIOA;
+		Buffer[1] = 0x0000;
+		ExIO(Buffer,2);
+		
+		printf("In = %04X\r\n",Buffer[1]);
 		In =  ReadAddessEXIO();
-		if(Old != In)
+
+
+		if(!GPIOPinRead(GPIOF_BASE, GPIO_PIN_4) && RunOnce == 0)
 		{
-			printf("In = %03X \r\n",In);
-			Old = In;
+			PingPongSemaphore ^= 1;
 		}
 		
 		WriteOutIOEX(lfsr | In);
 		
 		if(	Semaphore != 0)
 		{	
-			TimerEnable(TIMER0_BASE, TIMER_BOTH);
+			//TimerEnable(TIMER0_BASE, TIMER_BOTH);
+			//TIMER0->CTL |= TIMER_CTL_TAEN | TIMER_CTL_TBEN;
 			Semaphore = 0;
+		//	lfsr ^= 0xFFFF;
+			
 			bit  = ((lfsr >> 0) ^ (lfsr >> 2) ^ (lfsr >> 3) ^ (lfsr >> 5) ) & 1;
 			lfsr =  (lfsr >> 1) | (bit << 15);
 		}
 //		
-		TempCh = RngGet(&RxBufpt);
-		
+//		TempCh = RngGet(&RxBufpt);
+//		if(TempCh != EOF)
+//		{
+//			printf("%c",(char)TempCh);
+//		}
 	}
 	//Should never end up here
 }
