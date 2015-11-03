@@ -177,7 +177,7 @@ int main(void)
 	U16 In,RxBufpt;
 	U16 Buffer[5];
 	volatile U32 BaseTime = TimeDebug1;
-//	unsigned bit;
+	unsigned bit;
 	U8 BLAH[256],RunOnce, x;
 
 	RunOnce = 0;
@@ -254,13 +254,9 @@ int main(void)
 		ExIO(Buffer,2);
 		
 		printf("In = %04X\r\n",Buffer[1]);
-		//In =  ReadAddessEXIO();
+		In =  ReadAddessEXIO();
 
-//		if( !uDMAChannelIsEnabled(UDMA_CHANNEL_UART0TX) ) 
-//		{
-//			RunOnce = 0;
-//		}
-		
+
 		if(!GPIOPinRead(GPIOF_BASE, GPIO_PIN_4) && RunOnce == 0)
 		{
 			PingPongSemaphore ^= 1;
@@ -271,12 +267,12 @@ int main(void)
 		if(	Semaphore != 0)
 		{	
 			//TimerEnable(TIMER0_BASE, TIMER_BOTH);
-			TIMER0->CTL |= TIMER_CTL_TAEN | TIMER_CTL_TBEN;
+			//TIMER0->CTL |= TIMER_CTL_TAEN | TIMER_CTL_TBEN;
 			Semaphore = 0;
-			lfsr ^= 0xFFFF;
+		//	lfsr ^= 0xFFFF;
 			
-//			bit  = ((lfsr >> 0) ^ (lfsr >> 2) ^ (lfsr >> 3) ^ (lfsr >> 5) ) & 1;
-//			lfsr =  (lfsr >> 1) | (bit << 15);
+			bit  = ((lfsr >> 0) ^ (lfsr >> 2) ^ (lfsr >> 3) ^ (lfsr >> 5) ) & 1;
+			lfsr =  (lfsr >> 1) | (bit << 15);
 		}
 //		
 //		TempCh = RngGet(&RxBufpt);

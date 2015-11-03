@@ -74,9 +74,8 @@
 
 	SSIClockSourceSet(SSI3_BASE, SSI_CLOCK_SYSTEM);
 	SSIConfigSetExpClk(SSI3_BASE, SysCtlClockGet(),	SSI_FRF_MOTO_MODE_0, SSI_MODE_MASTER, 10000, 16);
-//	SSIAdvModeSet(SSI3_BASE, SSI_ADV_MODE_LEGACY);
-	
-	
+	SSIAdvModeSet(SSI3_BASE, SSI_ADV_MODE_READ_WRITE);
+		
 	SSIEnable(SSI3_BASE);
 
 	Buffer[0] = IO_Ex_Write | IO_Ex_0_IOCON;									//WRITE
@@ -84,85 +83,20 @@
 	ExIO(Buffer,2);
 
 	Buffer[0] = IO_Ex_Write | IO_Ex_0_GPPUA;									//WRITE
-	Buffer[1] = 0x01FF;
+	Buffer[1] = (0xFF << 8) + 0x80;//All of A plus the highest bit of B;
 	ExIO(Buffer,2);
 	
 	Buffer[0] = IO_Ex_Write | IO_Ex_0_IODIRA;									//WRITE
-	Buffer[1] = 0x01FF;
+	Buffer[1] = (0xFF << 8) + 0x80;//All of A plus the highest bit of B
 	ExIO(Buffer,2);
 	
 	Buffer[0] = IO_Ex_Write | IO_Ex_0_OLATA;// IO_Ex_0_IODIRA;		
-	Buffer[1] = ~(0x01FF) ;
+	Buffer[1] = 0x0000 ;
 	ExIO(Buffer,2);
 
-//////////////////////////
-	Buffer[0] = IO_Ex_Read | IO_Ex_0_IOCON;									//WRITE
-	Buffer[1] = 0;	
-	ExIO(Buffer,2);
-	printf("IO_Ex_0_IOCON  %04X-> %04X\r\n",IO_Ex_Read | IO_Ex_0_IOCON,Buffer[1]);
-//////////////////////////
-
-//////////////////////////
-	Buffer[0] = IO_Ex_Read | IO_Ex_0_GPPUA;									//WRITE
-	Buffer[1] = 0;	
-	ExIO(Buffer,2);
-	printf("IO_Ex_0_GPPUA  %04X-> %04X\r\n",IO_Ex_Read | IO_Ex_0_GPPUA,Buffer[1]);
-//////////////////////////
-
-//////////////////////////
-	Buffer[0] = IO_Ex_Read | IO_Ex_0_IODIRA;									//WRITE
-	Buffer[1] = 0;	
-	ExIO(Buffer,2);
-	printf("IO_Ex_0_IODIRA %04X-> %04X\r\n",IO_Ex_Read | IO_Ex_0_IODIRA,Buffer[1]);
-//////////////////////////
-
-//////////////////////////
-	Buffer[0] = IO_Ex_Read | IO_Ex_0_OLATA;									//WRITE
-	Buffer[1] = 0;	
-	ExIO(Buffer,2);
-	printf("IO_Ex_0_OLATA  %04X-> %04X\r\n",IO_Ex_Read | IO_Ex_0_OLATA,Buffer[1]);
-//////////////////////////	
 	return;
  }
  
-// void DMA_Setup_SSI3()
-// {
-//////	// No attributes must be set for a software-based transfer. The attributes
-//////	// are cleared by default, but are explicitly cleared here, in case they
-//////	// were set elsewhere.
-//////	//
-//	//uDMAChannelAttributeDisable(UDMA_CHANNEL_SW, UDMA_ATTR_ALL);
-//	uDMAChannelAttributeDisable(UDMA_CHANNEL_UART0TX, UDMA_ATTR_ALL);
-//	
-//////	//
-//////	// Now set up the characteristics of the transfer for 8-bit data size, with
-//////	// source and destination increments in bytes, and a byte-wise buffer copy.
-//////	// A bus arbitration size of 8 is used.
-//////	//
-//////	uDMAChannelControlSet(UDMA_CHANNEL_UART1TX | UDMA_PRI_SELECT,
-//////		UDMA_SIZE_8 | UDMA_SRC_INC_8 | UDMA_DST_INC_8 | UDMA_ARB_8);
-//	 uDMAChannelControlSet(  UDMA_CHANNEL_UART0TX    |
-//                                UDMA_PRI_SELECT,
-//                                UDMA_SIZE_8             |
-//                                UDMA_SRC_INC_8          |
-//                                UDMA_DST_INC_NONE       |
-//                                UDMA_NEXT_USEBURST              );
-//		
-
-//////	// Finally, the channel must be enabled. Because this is a software-
-//////	// initiated transfer, a request must also be made. The request starts the
-//////	// transfer.
-//////	//
-//	UARTIntEnable(UART0_BASE,UART_INT_DMATX);
-
-////        // DMA channel must be enabled first, or an interrupt will occur immediately
-//	uDMAChannelEnable(UDMA_CHANNEL_SSI3RX);
-//	uDMAChannelEnable(UDMA_CHANNEL_SSI3TX);
-//	SSIDMAEnable(SSI3_BASE, SSI_DMARX);
-//	SSIDMAEnable(SSI3_BASE, SSI_DMATX);
-// }
- 
- //817 - 223 - 3344 David Dodson
  U16 ReadAddessEXIO()
  {
 	U16 Buffer[3];
