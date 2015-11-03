@@ -211,8 +211,6 @@ void UartWrite(U8 *DataToSend, U16 Length)
 	full table for all modes and channels.
 	NOTE: This table must be 1024-byte aligned.*/
 	//
-	printf("\r\n\n\n\n\n");
-	printf("-------------------------------------------------------------------\r\n");
 	uDMAEnable();
 ////	//
 ////	// Set the base for the channel control table.
@@ -248,8 +246,8 @@ void UartWrite(U8 *DataToSend, U16 Length)
 	UARTIntEnable(UART0_BASE,UART_INT_DMATX);
 
 //        // DMA channel must be enabled first, or an interrupt will occur immediately
-        uDMAChannelEnable(UDMA_CHANNEL_UART0TX);
-        UARTDMAEnable(UART0_BASE, UART_DMA_TX);
+	uDMAChannelEnable(UDMA_CHANNEL_UART0TX);
+	UARTDMAEnable(UART0_BASE, UART_DMA_TX);
 }
 
 void

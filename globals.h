@@ -22,7 +22,8 @@ typedef unsigned long long U64; //Standard Naming
 #define SWREGBITW(x, b) SWREG(((uint32_t)(x) & 0x20000000) | 0x02000000 |                     \
 							(((uint32_t)(x) & 0x000FFFFF) << 5) | ((b) << 2))
 
-
+#define PULSETEST      	(*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 1*4)))
+#define CS      		(*((volatile uint32_t *)(0x42000000 + (0x400073FC-0x40000000)*32 + 1*4)))
 extern U8	PingDMX[513];
 extern U8	PongDMX[513];
 extern U32 	BBFlags;

@@ -13,7 +13,7 @@
 #include "driverlib/ssi.h"
 #include "driverlib/udma.h"
 #include <string.h>
-
+#include "globals.h"
 #include "IO_Expander.h"
  void SSI3_Handler()
  {
@@ -32,14 +32,8 @@
  {
 	U16 index = 0;
 	U32 temp;
-//	SSIDMAEnable(SSI3_BASE, SSI_DMA_RX | SSI_DMA_TX);
-//	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0x00);//Write to the pins
-	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0xFF);//Write to the pins
-	__NOP;
-	__NOP;
-	__NOP;
-	__NOP;
-	__NOP;
+
+	CS = 0;//OPEN DRAIN
 	do
 	{
 		SSIDataPut(SSI3_BASE,(U32)BuffOut[index]);
@@ -48,14 +42,8 @@
 		SSIDataGet(SSI3_BASE,&temp);
 		BuffIn[index] = (U16)temp;
 	}while(index++ < Length);
-	__NOP;
-	__NOP;
-	__NOP;
-	__NOP;
-	__NOP;
-	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0x00);//Write to the pins
-//	SSIDMADisable(SSI3_BASE,SSI_DMA_RX | SSI_DMA_TX);
-//	GPIOPinWrite(GPIOD_BASE, GPIO_PIN_1, 0xFF);//Write to the pins
+	CS = 1;
+	
 	return;
  }
  
@@ -90,8 +78,7 @@
 	
 	
 	SSIEnable(SSI3_BASE);
-while(1)
-{
+
 	Buffer[0] = IO_Ex_Write | IO_Ex_0_IOCON;									//WRITE
 	Buffer[1] = 0x0404;	
 	ExIO(Buffer,2);
@@ -135,59 +122,45 @@ while(1)
 	ExIO(Buffer,2);
 	printf("IO_Ex_0_OLATA  %04X-> %04X\r\n",IO_Ex_Read | IO_Ex_0_OLATA,Buffer[1]);
 //////////////////////////	
-}
 	return;
  }
  
- void DMA_Setup()
- {
-//	//
-//// The application must allocate the channel control table. This one is a
-//// full table for all modes and channels.
-//// NOTE: This table must be 1024-byte aligned.
-//////
-//	uint8_t pui8DMAControlTable[1024];
-//	//
-//	uint8_t pui8SourceBuffer[256];
-//	uint8_t pui8DestBuffer[256];
-//	//
-//	// Enable the uDMA controller.
-//	//
-//	uDMAEnable();
-//	//
-//	// Set the base for the channel control table.
-//	//
-//	uDMAControlBaseSet(&pui8DMAControlTable[0]);
-//	//
-//	// No attributes must be set for a software-based transfer. The attributes
-//	// are cleared by default, but are explicitly cleared here, in case they
-//	// were set elsewhere.
-//	//
-//	uDMAChannelAttributeDisable(UDMA_CHANNEL_SW, UDMA_CONFIG_ALL);
-//	//
-//	// Now set up the characteristics of the transfer for 8-bit data size, with
-//	// source and destination increments in bytes, and a byte-wise buffer copy.
-//	// A bus arbitration size of 8 is used.
-//	//
-//	uDMAChannelControlSet(UDMA_CHANNEL_SW | UDMA_PRI_SELECT,
-//	UDMA_SIZE_8 | UDMA_SRC_INC_8 |
-//	UDMA_DST_INC_8 | UDMA_ARB_8);
-//	//
-//	// The transfer buffers and transfer size are now configured. The transfer
-//	// uses AUTO mode, which means that the transfer automatically runs to
-//	// completion after the first request.
-//	//
-//	uDMAChannelTransferSet(UDMA_CHANNEL_SW | UDMA_PRI_SELECT,
-//	UDMA_MODE_AUTO, pui8SourceBuffer, pui8DestBuffer,
-//	sizeof(pui8DestBuffer));
-//	//
-//	// Finally, the channel must be enabled. Because this is a software-
-//	// initiated transfer, a request must also be made. The request starts the
-//	// transfer.
-//	//
-//	uDMAChannelEnable(UDMA_CHANNEL_SW);
-//	uDMAChannelRequest(UDMA_CHANNEL_SW);
- }
+// void DMA_Setup_SSI3()
+// {
+//////	// No attributes must be set for a software-based transfer. The attributes
+//////	// are cleared by default, but are explicitly cleared here, in case they
+//////	// were set elsewhere.
+//////	//
+//	//uDMAChannelAttributeDisable(UDMA_CHANNEL_SW, UDMA_ATTR_ALL);
+//	uDMAChannelAttributeDisable(UDMA_CHANNEL_UART0TX, UDMA_ATTR_ALL);
+//	
+//////	//
+//////	// Now set up the characteristics of the transfer for 8-bit data size, with
+//////	// source and destination increments in bytes, and a byte-wise buffer copy.
+//////	// A bus arbitration size of 8 is used.
+//////	//
+//////	uDMAChannelControlSet(UDMA_CHANNEL_UART1TX | UDMA_PRI_SELECT,
+//////		UDMA_SIZE_8 | UDMA_SRC_INC_8 | UDMA_DST_INC_8 | UDMA_ARB_8);
+//	 uDMAChannelControlSet(  UDMA_CHANNEL_UART0TX    |
+//                                UDMA_PRI_SELECT,
+//                                UDMA_SIZE_8             |
+//                                UDMA_SRC_INC_8          |
+//                                UDMA_DST_INC_NONE       |
+//                                UDMA_NEXT_USEBURST              );
+//		
+
+//////	// Finally, the channel must be enabled. Because this is a software-
+//////	// initiated transfer, a request must also be made. The request starts the
+//////	// transfer.
+//////	//
+//	UARTIntEnable(UART0_BASE,UART_INT_DMATX);
+
+////        // DMA channel must be enabled first, or an interrupt will occur immediately
+//	uDMAChannelEnable(UDMA_CHANNEL_SSI3RX);
+//	uDMAChannelEnable(UDMA_CHANNEL_SSI3TX);
+//	SSIDMAEnable(SSI3_BASE, SSI_DMARX);
+//	SSIDMAEnable(SSI3_BASE, SSI_DMATX);
+// }
  
  //817 - 223 - 3344 David Dodson
  U16 ReadAddessEXIO()
