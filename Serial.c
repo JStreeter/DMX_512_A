@@ -18,6 +18,7 @@
 #include "driverlib/interrupt.h"
 #include "inc/hw_ints.h"
 #include "inc/hw_ssi.h"
+#include <string.h>
 
 
 #define MEM_BUFFER_SIZE 1024
@@ -50,25 +51,6 @@ uint8_t 		pui8DMAControlTable[1024];//THIS IS REQUIRED FOR DMA DO NOT ASK. DO NO
 		Foo = UART1->DR;
 		//Set A gloabal flag that bits have been inserted.
 	}
-
-//	if (UART1->RIS & UART_RIS_TXRIS)//Tx IF
-//	{
-//		UART1->ICR |= UART_INT_TX;
-		//FIX THIS
-		//FIX THIS//FIX THIS
-		//FIX THIS//FIX THIS//FIX THIS
-		//FIX THIS//FIX THIS//FIX THIS//FIX THIS
-////////////		if (iURd != iUWrt)
-////////////		{
-////////////			UART1->DR = UartOutBuf[iURd];
-////////////			//iURd = ++iURd & UOUTMASK;
-////////////		}
-////////////		else
-////////////		{
-////////////			TxReady = 1;	//Set a global Bit indicating that the TX buffer is ready to receive another byte
-////////////		}
-//	}
-
 	return;
 }
 
@@ -250,8 +232,39 @@ void UartWrite(U8 *DataToSend, U16 Length)
 	UARTDMAEnable(UART0_BASE, UART_DMA_TX);
 }
 
-void
-InitSWTransfer(void)
+//U8 GetTokens(unsigned char *sentence, U8 **tok)
+//{
+//	U8	RetVal,
+//		idx,
+//		len;
+
+//	len = strlen((char*)sentence);
+//	RetVal = 0;
+//	if (len > 2)
+//	{
+//		tok[0] = sentence + 2;
+//		RetVal = 1;
+//		for (idx = 2; idx < len; idx++)
+//		{
+//			if (sentence[idx] == ',' || sentence[idx] == '*')	// If we find a delimiter, end this token string
+//			{						
+//																// and point to the beginning of the next one,
+//																// even if this points to another delimiter or the NULL terminator!!
+//				tok[RetVal++] = &sentence[idx + 1];
+//				sentence[idx] = 0;	// This delimiter is now NULL terminator for the previous token.
+//			}
+
+//			// in the unlikely case that there is no data between the final delimiter
+//			// and the NULL terminator, the final entry will point to the NULL terminator
+//			// thus yielding a legal, empty string.
+//		}
+//	}
+
+//	tok[RetVal] = NULL;				// Mark the end.
+//	return RetVal;
+//}
+
+void InitSWTransfer(void)
 {
 //	unsigned int uIdx;
 //	

@@ -91,7 +91,7 @@
 	ExIO(Buffer,2);
 	
 	Buffer[0] = IO_Ex_Write | IO_Ex_0_OLATA;// IO_Ex_0_IODIRA;		
-	Buffer[1] = 0x0000 ;
+	Buffer[1] = 0x007F ;
 	ExIO(Buffer,2);
 
 	return;

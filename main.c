@@ -107,17 +107,14 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
    	// Configure UART0 to 115200 baud, 8N1 format (must be 3 clocks from clock enable and config writes)
 	UARTEnable(UART0_BASE);
 	UARTClockSourceSet(UART0_BASE,UART_CLOCK_SYSTEM);
-/*DEBUG*///	UARTConfigSetExpClk(UART0_BASE, SysCtlClockGet(), DebugBaud, UART_CONFIG_WLEN_8 | UART_CONFIG_PAR_NONE | UART_CONFIG_STOP_ONE);
-	UARTConfigSetExpClk(UART0_BASE, SysCtlClockGet(), DMXBAUD, UART_CONFIG_WLEN_8 | UART_CONFIG_PAR_NONE | UART_CONFIG_STOP_ONE);
+/*DEBUG*/	UARTConfigSetExpClk(UART0_BASE, SysCtlClockGet(), DebugBaud, UART_CONFIG_WLEN_8 | UART_CONFIG_PAR_NONE | UART_CONFIG_STOP_ONE);
+	//UARTConfigSetExpClk(UART0_BASE, SysCtlClockGet(), DMXBAUD, UART_CONFIG_WLEN_8 | UART_CONFIG_PAR_NONE | UART_CONFIG_STOP_ONE);
 		
 	UARTFIFODisable(UART0_BASE);
 //END/////////////Debug//////////////////////////////////////////////////////////////////////////////////
 	
 ///////////////DMX-512-A/////////////////////////////////////////////////////////////////////////////////////	
 	GPIOPinTypeUART(GPIOC_BASE,GPIO_PIN_5 | GPIO_PIN_4);
-	//
-	// Enable UART1 functionality on GPIO Port B pins 0 and 1.
-	//
 	
    	// Configure UART0 to 115200 baud, 8N1 format (must be 3 clocks from clock enable and config writes)
 	UARTEnable(UART1_BASE);
@@ -253,7 +250,6 @@ int main(void)
 		Buffer[1] = 0x0000;
 		ExIO(Buffer,2);
 		
-		printf("In = %04X\r\n",Buffer[1]);
 		In =  ReadAddessEXIO();
 
 
@@ -266,20 +262,30 @@ int main(void)
 		
 		if(	Semaphore != 0)
 		{	
-			//TimerEnable(TIMER0_BASE, TIMER_BOTH);
-			//TIMER0->CTL |= TIMER_CTL_TAEN | TIMER_CTL_TBEN;
 			Semaphore = 0;
-		//	lfsr ^= 0xFFFF;
 			
 			bit  = ((lfsr >> 0) ^ (lfsr >> 2) ^ (lfsr >> 3) ^ (lfsr >> 5) ) & 1;
 			lfsr =  (lfsr >> 1) | (bit << 15);
 		}
-//		
-//		TempCh = RngGet(&RxBufpt);
-//		if(TempCh != EOF)
-//		{
-//			printf("%c",(char)TempCh);
-//		}
+		
+		TempCh = RngGet(&RxBufpt);
+		if(TempCh != EOF)
+		{
+			switch(TempCh)
+			{
+				case('\n'): break;
+				case('\r'):
+					printf("\r\n");
+				break;
+				case(0x08):
+					printf("\b \b");
+				break;
+				default:
+					printf("%c",(char)TempCh);
+					break;
+			}
+			
+		}
 	}
 	//Should never end up here
 }
