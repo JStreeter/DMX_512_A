@@ -100,11 +100,14 @@
  U16 ReadAddessEXIO()
  {
 	U16 Buffer[3];
-	U8 RV = 0;
+	U16 RV = 0;
 	Buffer[0] = IO_Ex_Read | IO_Ex_0_GPIOA;
 	Buffer[1] = 0x0000;
 	ExIO(Buffer,2);
-	RV = (Buffer[1] >> 8) & 0x01FF;
+	
+	RV = ((Buffer[1] >> 8) & 0x01FF) | ((Buffer[1] & 0x0080)<<1) ;
+	
+	//printf("Raw %04X | %04X\r",Buffer[1],RV);
 	return RV;
  }
  

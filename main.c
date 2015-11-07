@@ -81,6 +81,7 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
     // Note UART on port A must use APB
     SYSCTL->GPIOHBCTL = 0;
 
+	GPIOPinWrite(GPIOE_BASE, GPIO_PIN_1, 0);//Write to the pins
     // Configure LED and pushbutton pins
 	GPIOPadConfigSet(GPIOE_BASE,GPIO_PIN_3,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
 	GPIODirModeSet(GPIOE_BASE,GPIO_PIN_3,GPIO_DIR_MODE_OUT);
@@ -95,6 +96,9 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	//Push Buttons
 	GPIOPadConfigSet(GPIOF_BASE,GPIO_PIN_0 | GPIO_PIN_4,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD_WPU);
 	GPIODirModeSet(GPIOF_BASE,GPIO_PIN_0 | GPIO_PIN_4,GPIO_DIR_MODE_IN);
+	
+	GPIOPadConfigSet(GPIOE_BASE,GPIO_PIN_1 ,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
+	GPIODirModeSet(GPIOE_BASE,GPIO_PIN_1 ,GPIO_DIR_MODE_OUT);
 
 ///////////////Debug/////////////////////////////////////////////////////////////////////////////////////	
 	GPIOPinTypeUART(GPIOA_BASE,GPIO_PIN_0 | GPIO_PIN_1);
@@ -171,7 +175,7 @@ int main(void)
     U32 lfsr = 0xAAAAu;/* Any nonzero start state will work. */
     U32	Time;
 	volatile S16 TempCh;
-	U16 In,RxBufpt;
+	U16 In,oldIn,RxBufpt;
 	U16 Buffer[5];
 	volatile U32 BaseTime = TimeDebug1;
 	unsigned bit;
@@ -208,6 +212,7 @@ int main(void)
 	
 	GPIOPinWrite(GPIOF_BASE, GPIO_PIN_3, 0xFF);//Write to the pins
 	x = 0;
+	GPIOPinWrite(GPIOE_BASE, GPIO_PIN_1, 0xFF);//Write to the pins
 	SpiSetup();
 	SSIIntEnable(SSI3_BASE,SSI_RXFF);
 	while(x < 20)
@@ -225,7 +230,7 @@ int main(void)
 	printf("The Clock is set to %d\r\n",Time);
 	GPIOPinWrite(GPIOF_BASE, GPIO_PIN_2, 0xFF);//Write to the pins
 
-	printf("In = %03X \r\n",ReadAddessEXIO());
+
 	
 	while(GPIOPinRead(GPIOF_BASE, GPIO_PIN_4));//Wait of user
 	GPIOPinWrite(GPIOF_BASE, GPIO_PIN_2, 0x00);//Write to the pins
@@ -234,8 +239,8 @@ int main(void)
 
 	DMA_Setup_UART1();
 
-	sprintf((char*)&BLAH[0],"This is the exact message that I am printing.\r\n");
-	printf("%s",BLAH);
+//	sprintf((char*)&BLAH[0],"This is the exact message that I am printing.\r\n");
+//	printf("%s",BLAH);
 	In =  ReadAddessEXIO();
 	PingPongSemaphore = 0;
 	
@@ -251,14 +256,19 @@ int main(void)
 		ExIO(Buffer,2);
 		
 		In =  ReadAddessEXIO();
-
-
+		if(oldIn != In)
+		{
+			printf("In = %02X %s\r\n",In&0xFF,In&0x0100?"Master":"Slave");
+			
+			oldIn = In;
+		}
 		if(!GPIOPinRead(GPIOF_BASE, GPIO_PIN_4) && RunOnce == 0)
 		{
 			PingPongSemaphore ^= 1;
 		}
 		
-		WriteOutIOEX(lfsr | In);
+		
+		WriteOutIOEX(lfsr|(In));
 		
 		if(	Semaphore != 0)
 		{	
