@@ -53,26 +53,29 @@ void TIMER0A_Handler()
 	}
 	else
 	{
-		StateOfLevels = 0;
-		if(PingPongSemaphore == 0)
+		if(MaxSend)
 		{
-			uDMAChannelTransferSet( UDMA_CHANNEL_UART0TX | UDMA_PRI_SELECT, UDMA_MODE_BASIC,
-									A_DMX,
-									(void *)(UART0_BASE + UART_O_DR),
-									MaxSend + 1);
+//			StateOfLevels = 0;
+//			if(PingPongSemaphore == 0)
+//			{
+//				uDMAChannelTransferSet( UDMA_CHANNEL_UART0TX | UDMA_PRI_SELECT, UDMA_MODE_BASIC,
+//										A_DMX,
+//										(void *)(UART0_BASE + UART_O_DR),
+//										MaxSend + 1);
+//			}
+//			else
+//			{
+//				uDMAChannelTransferSet( UDMA_CHANNEL_UART0TX | UDMA_PRI_SELECT, UDMA_MODE_BASIC,
+//										B_DMX,
+//										(void *)(UART0_BASE + UART_O_DR),
+//										MaxSend + 1);
+//			}
+//			
+//			LastPingPongSemaphore = PingPongSemaphore;
+//			uDMAChannelEnable(UDMA_CHANNEL_UART0TX);
+//			UARTDMAEnable(UART0_BASE, UART_DMA_TX);
+//			uDMAChannelRequest(UDMA_CHANNEL_UART0TX);
 		}
-		else
-		{
-			uDMAChannelTransferSet( UDMA_CHANNEL_UART0TX | UDMA_PRI_SELECT, UDMA_MODE_BASIC,
-									B_DMX,
-									(void *)(UART0_BASE + UART_O_DR),
-									MaxSend + 1);
-		}
-		
-		LastPingPongSemaphore = PingPongSemaphore;
-		uDMAChannelEnable(UDMA_CHANNEL_UART0TX);
-		UARTDMAEnable(UART0_BASE, UART_DMA_TX);
-		uDMAChannelRequest(UDMA_CHANNEL_UART0TX);
 	}	
 
 	return;

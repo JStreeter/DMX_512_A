@@ -21,6 +21,7 @@ const char * StringCheck[] = {
 };
 
 U16 MaxSend;
+
 void IntGlobals()
 {
 	U16 Setup;

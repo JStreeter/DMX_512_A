@@ -28,7 +28,8 @@ typedef unsigned long long U64; //Standard Naming
 extern U8	A_DMX[513];
 extern U8	B_DMX[513];
 extern U32 	BBFlags;
-#define PingPongSemaphore	SWREGBITW(&BBFlags, 0)
+extern U16 	MaxSend;
+#define PingPongSemaphore		SWREGBITW(&BBFlags, 0)
 #define LastPingPongSemaphore	SWREGBITW(&BBFlags, 1)
 typedef enum
 {

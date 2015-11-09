@@ -183,6 +183,7 @@ int main(void)
 	U16 Buffer[5];
 	volatile U32 BaseTime = TimeDebug1;
 	unsigned bit;
+	char Buffing[24];
 	U8 RunOnce, x;
 
 	RunOnce = 0;
