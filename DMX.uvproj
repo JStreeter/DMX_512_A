@@ -442,6 +442,11 @@
               <FileType>1</FileType>
               <FilePath>.\globals.c</FilePath>
             </File>
+            <File>
+              <FileName>parser.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\parser.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

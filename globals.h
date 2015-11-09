@@ -18,14 +18,15 @@ typedef long long       S64;    //Standard Naming
 typedef unsigned long long U64; //Standard Naming
 
 
+
 #define SWREG(x) (*((volatile uint32_t *)(x)))
 #define SWREGBITW(x, b) SWREG(((uint32_t)(x) & 0x20000000) | 0x02000000 |                     \
 							(((uint32_t)(x) & 0x000FFFFF) << 5) | ((b) << 2))
 
 #define PULSETEST      	(*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 1*4)))
 #define CS      		(*((volatile uint32_t *)(0x42000000 + (0x400073FC-0x40000000)*32 + 1*4)))
-extern U8	PingDMX[513];
-extern U8	PongDMX[513];
+extern U8	A_DMX[513];
+extern U8	B_DMX[513];
 extern U32 	BBFlags;
 #define PingPongSemaphore	SWREGBITW(&BBFlags, 0)
 #define LastPingPongSemaphore	SWREGBITW(&BBFlags, 1)
@@ -60,5 +61,8 @@ struct _sQueque_Link
 	QLink		*Link;
 };
 
+extern const char * StringCheck[];
+
 extern void IntGlobals(void);
+extern U8 LocalHead;
 #endif

@@ -37,6 +37,7 @@
 #include <string.h>
 
 #include "IO_Expander.h"
+#include "Paser.h"
 ////////////////////////////////////////////////////////////////////////////////
 	// EXTERNALS
 ////////////////////////////////////////////////////////////////////////////////
@@ -169,7 +170,10 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 //Minimum Packet is 24 data packets(Add padding)
 ////////////////////////////////////////////////////////////////////////////////
 #define GREEN_LED    (*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 3*4)))
-
+  char *states[15] = {
+        "California", "Oregon",
+        "Washington", "Texas"
+    };
 int main(void)
 {
     U32 lfsr = 0xAAAAu;/* Any nonzero start state will work. */
@@ -179,7 +183,7 @@ int main(void)
 	U16 Buffer[5];
 	volatile U32 BaseTime = TimeDebug1;
 	unsigned bit;
-	U8 BLAH[256],RunOnce, x;
+	U8 RunOnce, x;
 
 	RunOnce = 0;
 	// Display greeting
@@ -230,8 +234,6 @@ int main(void)
 	printf("The Clock is set to %d\r\n",Time);
 	GPIOPinWrite(GPIOF_BASE, GPIO_PIN_2, 0xFF);//Write to the pins
 
-
-	
 	while(GPIOPinRead(GPIOF_BASE, GPIO_PIN_4));//Wait of user
 	GPIOPinWrite(GPIOF_BASE, GPIO_PIN_2, 0x00);//Write to the pins
 
@@ -239,8 +241,6 @@ int main(void)
 
 	DMA_Setup_UART1();
 
-//	sprintf((char*)&BLAH[0],"This is the exact message that I am printing.\r\n");
-//	printf("%s",BLAH);
 	In =  ReadAddessEXIO();
 	PingPongSemaphore = 0;
 	
@@ -248,6 +248,10 @@ int main(void)
 	TIMER1->TAILR = 1250000;//1 / 40 
 	TIMER1->CTL |= TIMER_CTL_TAEN | TIMER_CTL_TBEN;
 	lfsr =0xFFFF;
+
+	printf("Ready\r\n");
+	In =  ReadAddessEXIO();
+	oldIn = In;
 	while(1)
 	{			
 		
@@ -281,20 +285,7 @@ int main(void)
 		TempCh = RngGet(&RxBufpt);
 		if(TempCh != EOF)
 		{
-			switch(TempCh)
-			{
-				case('\n'): break;
-				case('\r'):
-					printf("\r\n");
-				break;
-				case(0x08):
-					printf("\b \b");
-				break;
-				default:
-					printf("%c",(char)TempCh);
-					break;
-			}
-			
+			parseCommand((U8)TempCh);
 		}
 	}
 	//Should never end up here

@@ -6,25 +6,41 @@
 
 U32 BBFlags;
 
-U8	PingDMX[513];//THIS IS REQUIRED FOR DMX DO NOT ASK
-U8	PongDMX[513];//THIS IS REQUIRED FOR DMX DO NOT ASK
+U8	A_DMX[513];//THIS IS REQUIRED FOR DMX DO NOT ASK
+U8	B_DMX[513];//THIS IS REQUIRED FOR DMX DO NOT ASK
 
+U8 LocalHead;
+const char * StringCheck[] = {
+    "clear\0",
+    "set\0",
+    "get\0",
+	"on\0",
+	"off\0",
+	"max\0",
+	"poll\0"	
+};
+
+U16 MaxSend;
 void IntGlobals()
 {
 	U16 Setup;
 	
-	PingDMX[0] = '0';
-	PongDMX[0] = '0';
+	A_DMX[0] = '0';
+	B_DMX[0] = '0';
 	PingPongSemaphore = 0;
 	for(Setup=1;Setup<511;Setup++)
 	{
-		PingDMX[Setup] = 'A';
-		PongDMX[Setup] = 'B';
+		A_DMX[Setup] = 'A';
+		B_DMX[Setup] = 'B';
 	}
-	PingDMX[511] = '\r';
-	PongDMX[511] = '\r';
+	A_DMX[511] = '\r';
+	B_DMX[511] = '\r';
 	
-	PingDMX[512] = '\n';
-	PongDMX[512] = '\n';
+	A_DMX[512] = '\n';
+	B_DMX[512] = '\n';
+	
+	MaxSend = 512;
+	LocalHead = 0;
+	
 	return;
 }
