@@ -86,10 +86,14 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
     // Configure LED and pushbutton pins
 	GPIOPadConfigSet(GPIOE_BASE,GPIO_PIN_3,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
 	GPIODirModeSet(GPIOE_BASE,GPIO_PIN_3,GPIO_DIR_MODE_OUT);
+
+	GPIOPadConfigSet(GPIOB_BASE,GPIO_PIN_0 | GPIO_PIN_1,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
+	GPIODirModeSet(GPIOB_BASE,GPIO_PIN_0 | GPIO_PIN_1,GPIO_DIR_MODE_OUT);
+	
 	
 	//CCS
-	GPIOPadConfigSet(GPIOD_BASE,GPIO_PIN_1,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
-	GPIODirModeSet(GPIOD_BASE,GPIO_PIN_1,GPIO_DIR_MODE_OUT);
+	GPIOPadConfigSet(GPIOD_BASE,GPIO_PIN_1 | GPIO_PIN_6,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
+	GPIODirModeSet(GPIOD_BASE,GPIO_PIN_1 | GPIO_PIN_6,GPIO_DIR_MODE_OUT);
 	//Leds First
     GPIOPadConfigSet(GPIOF_BASE,GPIO_PIN_1 | GPIO_PIN_2| GPIO_PIN_3,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
 	GPIODirModeSet(GPIOF_BASE,GPIO_PIN_1 | GPIO_PIN_2| GPIO_PIN_3,GPIO_DIR_MODE_OUT);
@@ -170,6 +174,7 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 //Minimum Packet is 24 data packets(Add padding)
 ////////////////////////////////////////////////////////////////////////////////
 #define GREEN_LED    (*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 3*4)))
+
   char *states[15] = {
         "California", "Oregon",
         "Washington", "Texas"
@@ -214,11 +219,15 @@ int main(void)
 	TIMER1->TAILR = 1250000;//1 / 40 
 	TIMER1->CTL |= TIMER_CTL_TAEN | TIMER_CTL_TBEN;
 	
-	GPIOPinWrite(GPIOF_BASE, GPIO_PIN_3, 0xFF);//Write to the pins
-	x = 0;
-	GPIOPinWrite(GPIOE_BASE, GPIO_PIN_1, 0xFF);//Write to the pins
+	
+	
+//	GPIOPinWrite(GPIOF_BASE, GPIO_PIN_3, 0xFF);//Write to the pins
+//	x = 0;
+//	GPIOPinWrite(GPIOE_BASE, GPIO_PIN_1, 0xFF);//Write to the pins
 	SpiSetup();
 	SSIIntEnable(SSI3_BASE,SSI_RXFF);
+	
+	DEATH();
 	while(x < 20)
 	{
 		
@@ -232,7 +241,7 @@ int main(void)
 
 	printf("\r\nHello World\r\n");	
 	printf("The Clock is set to %d\r\n",Time);
-	GPIOPinWrite(GPIOF_BASE, GPIO_PIN_2, 0xFF);//Write to the pins
+	
 
 	while(GPIOPinRead(GPIOF_BASE, GPIO_PIN_4));//Wait of user
 	GPIOPinWrite(GPIOF_BASE, GPIO_PIN_2, 0x00);//Write to the pins

@@ -47,6 +47,25 @@
 	return;
  }
  
+void Spi_Blk_8(U8 *BuffOut,U8 *BuffIn,U16 Length, U8 Device)
+{
+	U16 index = 0;
+	U32 temp;
+
+	CS = 0;//
+	do
+	{
+		SSIDataPut(SSI3_BASE,(U32)BuffOut[index]);
+		while(SSIBusy(SSI3_BASE));
+		//BuffIn[index] = (U8)HWREG(SSI3_BASE + SSI_O_DR);
+		SSIDataGet(SSI3_BASE,&temp);
+		BuffIn[index] = (U8)temp;
+	}while(index++ < Length);
+	CS = 1;
+
+	return;
+}
+ 
  void SpiSetup()
  {
 	U16 Buffer[3];
@@ -73,26 +92,26 @@
     GPIOPinTypeSSI(GPIOD_BASE, GPIO_PIN_3 | GPIO_PIN_2 | GPIO_PIN_0);
 
 	SSIClockSourceSet(SSI3_BASE, SSI_CLOCK_SYSTEM);
-	SSIConfigSetExpClk(SSI3_BASE, SysCtlClockGet(),	SSI_FRF_MOTO_MODE_0, SSI_MODE_MASTER, 10000, 16);
+	SSIConfigSetExpClk(SSI3_BASE, SysCtlClockGet(),	SSI_FRF_MOTO_MODE_0, SSI_MODE_MASTER, 10000, 8);
 	SSIAdvModeSet(SSI3_BASE, SSI_ADV_MODE_READ_WRITE);
 		
 	SSIEnable(SSI3_BASE);
 
-	Buffer[0] = IO_Ex_Write | IO_Ex_0_IOCON;									//WRITE
-	Buffer[1] = 0x0404;	
-	ExIO(Buffer,2);
+//	Buffer[0] = IO_Ex_Write | IO_Ex_0_IOCON;									//WRITE
+//	Buffer[1] = 0x0404;	
+//	ExIO(Buffer,2);
 
-	Buffer[0] = IO_Ex_Write | IO_Ex_0_GPPUA;									//WRITE
-	Buffer[1] = (0xFF << 8) + 0x80;//All of A plus the highest bit of B;
-	ExIO(Buffer,2);
-	
-	Buffer[0] = IO_Ex_Write | IO_Ex_0_IODIRA;									//WRITE
-	Buffer[1] = (0xFF << 8) + 0x80;//All of A plus the highest bit of B
-	ExIO(Buffer,2);
-	
-	Buffer[0] = IO_Ex_Write | IO_Ex_0_OLATA;// IO_Ex_0_IODIRA;		
-	Buffer[1] = 0x007F ;
-	ExIO(Buffer,2);
+//	Buffer[0] = IO_Ex_Write | IO_Ex_0_GPPUA;									//WRITE
+//	Buffer[1] = (0xFF << 8) + 0x80;//All of A plus the highest bit of B;
+//	ExIO(Buffer,2);
+//	
+//	Buffer[0] = IO_Ex_Write | IO_Ex_0_IODIRA;									//WRITE
+//	Buffer[1] = (0xFF << 8) + 0x80;//All of A plus the highest bit of B
+//	ExIO(Buffer,2);
+//	
+//	Buffer[0] = IO_Ex_Write | IO_Ex_0_OLATA;// IO_Ex_0_IODIRA;		
+//	Buffer[1] = 0x007F ;
+//	ExIO(Buffer,2);
 
 	return;
  }

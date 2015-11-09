@@ -3,7 +3,7 @@
 #include "globals.h"
 
 #define ExIO(x,y)	Spi_Blk(x,x,y,0)
-
+#define ExIO_8(x,y)	Spi_Blk_8(x,x,y,0)
 #define IO_Ex_Write 0x4000
 #define IO_Ex_Read 	0x4100
 
@@ -57,6 +57,8 @@
 #define IO_Ex_0_OLATB 		0x0015
 
 extern void Spi_Blk(U16 *BuffOut,U16 *BuffIn,U16 Length, U8 Device);
+extern void Spi_Blk_8(U8 *BuffOut,U8 *BuffIn,U16 Length, U8 Device);
+
 extern void SpiSetup(void);
 extern void DMA_Setup(void);
 extern U16 ReadAddessEXIO(void);
