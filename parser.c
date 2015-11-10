@@ -21,7 +21,7 @@
 
 
 void getCommand(U8 Pick[] ,U8 *);
-U16 ParseInput(U8 Raw[], U16* Derp);
+U8 ParseInput(U8 Raw[],U16 *Rv, U8 Types);
 
 void parseCommand(U8 ch)
 {
@@ -30,10 +30,18 @@ void parseCommand(U8 ch)
 	switch(ch)
 	{
 		case(0x08)://Delete
-			Lbuff[--LocalHead] = 0;
+			if(LocalHead != 0)
+			{
+				Lbuff[--LocalHead] = 0;
+			}
+			else
+			{
+				Lbuff[LocalHead] = 0;
+				printf("\r \r");
+			}
 		break;
-		case(0x0A)://New line DO IT
-		case(0x0D):
+		case(0x0A):// \n For someone special
+		case(0x0D):// \r
 			getCommand(Lbuff,&LocalHead);
 			printf("\r\n");
 		break;
@@ -74,16 +82,18 @@ static const char HELLO3[][20] =
 	"get",
 	"on",
 	"off",
-	"max M",
-	"poll"
+	"max",
+	"poll",
+	"show"
 };
 void getCommand(U8 Pick[] ,U8 *maxSize)
 {
-	U8 i, *Copy;
-	U16 j,Input,Herp;
+	U8 i;
+	U16 j,Input,Par[4];
 	static U16 SaveM;
+	
 	char* Value;
-	printf("\r\n^-----\r\n");
+//	printf("\r\n^-----\r\n");
 
 	i = 0;
 	do
@@ -93,91 +103,140 @@ void getCommand(U8 Pick[] ,U8 *maxSize)
 	
 	if(Value != 0)
 	{
-		printf("%s ||| %s\r\n",Value,Pick);
-
-		if(PingPongSemaphore)
-		{
-			Copy = B_DMX;
-		}
-		else
-		{
-			Copy = A_DMX;
-		}
-
 		switch(i)
 		{
 			case(0)://CLEAR
-				if(PingPongSemaphore)
+				printf("Clear\r\n");
+				for(j=0;j<514;j++)
 				{
-					Copy = B_DMX;
+					ShadowDMX[j]=0;
+				}
+				break;
+			case(1)://SET
+				Par[0] = 0;
+				Par[1] = 0;
+				Input = ParseInput(Pick+3,Par, 2);
+				if(Input > 1)
+				{
+					printf("\r\n");
+					if(Par[0] >512)
+						Par[0] = 512;
+					if(Par[1] >512)
+						Par[1] = 512;
+						
+					printf("Address %d == Data %d\r\n",Par[0],(U8)Par[1]);
+					ShadowDMX[Par[0]+1] = (U8)Par[1];
 				}
 				else
 				{
-					Copy = A_DMX;
+					printf("\r\nType ERROR\r\n");
 				}
-				
-				for(j=0;j<512;j++)Copy[j]=0;
-				PingPongSemaphore ^= 1;
-				break;
-			case(1)://SET
-				j = ParseInput(Pick, &Herp);
-				Input = ParseInput(Pick + Herp, &Herp);
-				Copy[j] = Input;
-				PingPongSemaphore ^= 1;
+				//////////////////////////////////////////////ShadowDMXz
 				break;
 			case(2)://GET
-				j = ParseInput(Pick, &Herp);
-				printf("Address == %d\r\n",Copy[j]);
+				Par[0] = 0;
+				Par[1] = 0;
+				Input = ParseInput(Pick+3,Par, 1);
+				if(Input != 0)
+				{
+					if(Par[0] >=512)
+						Par[0] = 512;
+					printf("\r\n");
+					printf("Address %d == %d\r\n",Par[0],ShadowDMX[Par[0]+1]);
+				}
+				else
+				{
+					printf("Type ERROR\r\n");
+				}
 				break;
 			case(3)://ON
 				MaxSend = SaveM;
+				printf("ON\r\n");
 				break;
 			case(4)://OFF
 				SaveM = MaxSend;
+				printf("Off\r\n");
 				break;
 			case(5)://MAX
-				Input = ParseInput(Pick + Herp, &Herp);
-				if(Input > 512)
-					Input = 512;
-				MaxSend = Input;
+				Par[0] = 0;
+				Par[1] = 0;
+				ParseInput(Pick+3,Par, 1);
+				if(Par[0] > 512)
+					Par[0] = 512;
+				printf("Max Address Sent %d\r\n",Par[0]);
+				MaxSend = Par[0];
 				break;
 			case(6)://POLL
 				printf("EMERGANCY!!! FIRE!!! CLOSE DOWN SYSTEM AND RUN!!!\r\n");
 				break;
-				
+			case(7)://Show
+				for(j=1;j<513;j++)
+				{
+					printf("%3d ",ShadowDMX[j]);
+					if((j) %16 == 0)
+						printf("\r\n");
+				}
+		
+				break;
+			
+			
 			default://HACF
-				printf("FUCK IF I KNOW\r\n");
+				printf("Halt and Catch Fire\r\n");
 				break;
 		}
-		printf("Ready\r\n");
+		printf("Ready");
 	}
 	else
 	{
 		printf("ERROR\r\n");
-	}
+	}	
+	
 	*maxSize = 0;
+	
 	return;
 }
 
-U16 ParseInput(U8 Raw[], U16* Derp)
+U8 ParseInput(U8 Raw[],U16 *Rv, U8 Types)
 {
 	U16 Counter = 0;
-	U16 Storage = 0;
-	U8 i;
+	U8 i,j,k;
 	
-	printf("Parser\r\n");
-	
+	j = 0;//Return vaule
+	k = 0;//Decaeded counter
 	do
 	{
 		i = 0;
-		if( Raw[Counter] != '\0' && Raw[Counter] !=  ',' && !isalpha(Raw[Counter]) )
+		while(Raw[Counter] == ' ' || Raw[Counter] ==  '\t')
+			Counter++;
+		if( Raw[Counter] != '\0' && Raw[Counter] !=  ',' && Raw[Counter] >= '0' && Raw[Counter] <= '9')// && !isalpha(Raw[Counter]) )
 		{
-			Storage = Storage * ( 10 * Counter );
-			Storage += Raw[Counter];
+			if(j == 0)
+			{
+				j++;
+			}
+			if(k>2)
+				return(0);
+//			printf("j %d k %d B %d ",j,k,Rv[j-1]);
+			Rv[j-1] = Rv[j-1] * 10;
+//			printf("D %d ",Rv[j-1]);
+			Rv[j-1] += Raw[Counter] - '0';
+//			printf("A %d\r\n",Rv[j-1]);
+
+			Counter++;
+			k++;
 			i = 1;
 		}
-	}while(i == 1);
-	*Derp = Counter;
-	
-	return(Storage);
+		
+		if(Raw[Counter] ==  ',')
+		{
+			Counter++;
+			i = 1;
+			j++;//Next type
+			k=0;
+			Rv[j] = 0;
+		}
+	}while(i == 1 && j <= Types);
+
+//	printf("%d %d\r\n",Rv[0],Rv[1]);//DEBUG
+	return(j);
 }

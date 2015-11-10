@@ -27,6 +27,7 @@ typedef unsigned long long U64; //Standard Naming
 #define CS      		(*((volatile uint32_t *)(0x42000000 + (0x400073FC-0x40000000)*32 + 1*4)))
 extern U8	A_DMX[513];
 extern U8	B_DMX[513];
+extern U8 	ShadowDMX[514];
 extern U32 	BBFlags;
 extern U16 	MaxSend;
 #define PingPongSemaphore		SWREGBITW(&BBFlags, 0)

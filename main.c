@@ -183,10 +183,10 @@ int main(void)
 	U16 Buffer[5];
 	volatile U32 BaseTime = TimeDebug1;
 	unsigned bit;
-	char Buffing[24];
-	U8 RunOnce, x;
+//	char Buffing[24];
+	U8 x;//RunOnce,
 
-	RunOnce = 0;
+//	RunOnce = 0;
 	// Display greeting
 	
 	UARTIntEnable(UART0_BASE,UART_INT_RX);
@@ -232,6 +232,7 @@ int main(void)
 	GPIOPinWrite(GPIOF_BASE, GPIO_PIN_3, 0x00);//Write to the pins
 
 	printf("\r\nHello World\r\n");	
+	
 	printf("The Clock is set to %d\r\n",Time);
 	GPIOPinWrite(GPIOF_BASE, GPIO_PIN_2, 0xFF);//Write to the pins
 
@@ -267,12 +268,7 @@ int main(void)
 			
 			oldIn = In;
 		}
-		if(!GPIOPinRead(GPIOF_BASE, GPIO_PIN_4) && RunOnce == 0)
-		{
-			PingPongSemaphore ^= 1;
-		}
-		
-		
+
 		WriteOutIOEX(lfsr|(In));
 		
 		if(	Semaphore != 0)
@@ -290,4 +286,10 @@ int main(void)
 		}
 	}
 	//Should never end up here
+}
+
+void masscopy()
+{
+
+	return;
 }
