@@ -45,7 +45,7 @@ uint8_t 		pui8DMAControlTable[1024];//THIS IS REQUIRED FOR DMA DO NOT ASK. DO NO
 	volatile U8 Foo;
 	if (UART1->RIS & UART_RIS_RXRIS)				//Got a Byte of Data?//RX IF
 	{
-		
+		RED_LED ^= 1;
 		UARTIntClear(UART1_BASE,UART_INT_RX);			//Clear Flag
 		//RngAdd(UART1->DR);		//Yes this is all it does	//A
 		Foo = UART1->DR;
@@ -59,6 +59,7 @@ uint8_t 		pui8DMAControlTable[1024];//THIS IS REQUIRED FOR DMA DO NOT ASK. DO NO
 	 uint32_t status;
 	if (UART0->RIS & UART_RIS_RXRIS)				//Got a Byte of Data?//RX IF
 	{
+		GREEN_LED ^= 1;
 		UARTIntClear(UART0_BASE,UART_INT_RX);			//Clear Flag
 		RngAdd(UART0->DR & 0xFF);		//Yes this is all it does	//A
 	}
@@ -232,66 +233,3 @@ void UartWrite(U8 *DataToSend, U16 Length)
 	UARTDMAEnable(UART0_BASE, UART_DMA_TX);
 }
 
-//U8 GetTokens(unsigned char *sentence, U8 **tok)
-//{
-//	U8	RetVal,
-//		idx,
-//		len;
-
-//	len = strlen((char*)sentence);
-//	RetVal = 0;
-//	if (len > 2)
-//	{
-//		tok[0] = sentence + 2;
-//		RetVal = 1;
-//		for (idx = 2; idx < len; idx++)
-//		{
-//			if (sentence[idx] == ',' || sentence[idx] == '*')	// If we find a delimiter, end this token string
-//			{						
-//																// and point to the beginning of the next one,
-//																// even if this points to another delimiter or the NULL terminator!!
-//				tok[RetVal++] = &sentence[idx + 1];
-//				sentence[idx] = 0;	// This delimiter is now NULL terminator for the previous token.
-//			}
-
-//			// in the unlikely case that there is no data between the final delimiter
-//			// and the NULL terminator, the final entry will point to the NULL terminator
-//			// thus yielding a legal, empty string.
-//		}
-//	}
-
-//	tok[RetVal] = NULL;				// Mark the end.
-//	return RetVal;
-//}
-
-void InitSWTransfer(void)
-{
-//	unsigned int uIdx;
-//	
-//	for(uIdx = 0; uIdx < 1024; uIdx++)
-//	{
-//		g_ulSrcBuf[uIdx] = uIdx;
-//	}
-//	
-//	uDMAChannelAttributeDisable(UDMA_CHANNEL_UART0TX, UDMA_ATTR_ALL);
-//	uDMAChannelControlSet(  UDMA_CHANNEL_UART0TX    |
-//                                UDMA_PRI_SELECT,
-//                                UDMA_SIZE_8             |
-//                                UDMA_SRC_INC_8          |
-//                                UDMA_DST_INC_NONE       |
-//                                UDMA_ARB_1              );
-//		
-//	UARTIntEnable(UART0_BASE,UART_INT_DMATX);
-//	uDMAChannelEnable(UDMA_CHANNEL_SSI1RX);
-//	SSIDMAEnable(SSI3_BASE, UART_DMA_RX);
-//	
-//	uDMAChannelEnable(UDMA_CHANNEL_SSI1RX);
-//	SSIDMAEnable(SSI3_BASE, UART_DMA_RX);
-//	
-//	IntEnable(INT_UDMA);
-//	uDMAChannelAttributeDisable(UDMA_CHANNEL_SW, UDMA_ATTR_ALL);
-//	uDMAChannelControlSet(UDMA_CHANNEL_SW | UDMA_PRI_SELECT, UDMA_SIZE_32 | UDMA_SRC_INC_32 | UDMA_DST_INC_32 | UDMA_ARB_8);
-//	uDMAChannelTransferSet(UDMA_CHANNEL_SW | UDMA_PRI_SELECT, UDMA_MODE_AUTO, g_ulSrcBuf, g_ulDstBuf, MEM_BUFFER_SIZE);
-//	uDMAChannelEnable(UDMA_CHANNEL_SW);
-//	uDMAChannelRequest(UDMA_CHANNEL_SW);
-}

@@ -90,7 +90,7 @@ void getCommand(U8 Pick[] ,U8 *maxSize)
 {
 	U8 i;
 	U16 j,Input,Par[4];
-	static U16 SaveM;
+	static U16 SaveM = 0,GoGOFlag = 0;
 	
 	char* Value;
 //	printf("\r\n^-----\r\n");
@@ -139,8 +139,8 @@ void getCommand(U8 Pick[] ,U8 *maxSize)
 				Input = ParseInput(Pick+3,Par, 1);
 				if(Input != 0)
 				{
-					if(Par[0] >=512)
-						Par[0] = 512;
+					if(Par[0] >511)
+						Par[0] = 511;
 					printf("\r\n");
 					printf("Address %d == %d\r\n",Par[0],ShadowDMX[Par[0]+1]);
 				}
@@ -151,10 +151,12 @@ void getCommand(U8 Pick[] ,U8 *maxSize)
 				break;
 			case(3)://ON
 				MaxSend = SaveM;
-				printf("ON\r\n");
+				GoGOFlag = 1;
+				printf("ON sending %d address\r\n", MaxSend);
 				break;
 			case(4)://OFF
-				SaveM = MaxSend;
+				MaxSend = 0;
+				GoGOFlag = 0;
 				printf("Off\r\n");
 				break;
 			case(5)://MAX
@@ -164,7 +166,12 @@ void getCommand(U8 Pick[] ,U8 *maxSize)
 				if(Par[0] > 512)
 					Par[0] = 512;
 				printf("Max Address Sent %d\r\n",Par[0]);
-				MaxSend = Par[0];
+				//MaxSend = Par[0];
+				SaveM = Par[0];
+				if(GoGOFlag)
+				{
+					MaxSend = SaveM;
+				}
 				break;
 			case(6)://POLL
 				printf("EMERGANCY!!! FIRE!!! CLOSE DOWN SYSTEM AND RUN!!!\r\n");
