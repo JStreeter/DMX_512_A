@@ -71,9 +71,9 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);//Leds Push Buttons
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);//A0,A1
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_UART1);//B0,B1
-	SysCtlPeripheralEnable(SYSCTL_PERIPH_UDMA);
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_UDMA); // Serial DMA
 	
-	SysCtlGPIOAHBDisable(SYSCTL_PERIPH_GPIOF);
+	SysCtlGPIOAHBDisable(SYSCTL_PERIPH_GPIOF);	//un needed
 	
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);//Timer 0//Short time
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER1);//Timer 1
@@ -90,6 +90,7 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	//CCS
 	GPIOPadConfigSet(GPIOD_BASE,GPIO_PIN_1,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
 	GPIODirModeSet(GPIOD_BASE,GPIO_PIN_1,GPIO_DIR_MODE_OUT);
+	
 	//Leds First
     GPIOPadConfigSet(GPIOF_BASE,GPIO_PIN_1 | GPIO_PIN_2| GPIO_PIN_3,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
 	GPIODirModeSet(GPIOF_BASE,GPIO_PIN_1 | GPIO_PIN_2| GPIO_PIN_3,GPIO_DIR_MODE_OUT);
@@ -113,12 +114,13 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	UARTEnable(UART0_BASE);
 	UARTClockSourceSet(UART0_BASE,UART_CLOCK_SYSTEM);
 /*DEBUG*/	UARTConfigSetExpClk(UART0_BASE, SysCtlClockGet(), DebugBaud, UART_CONFIG_WLEN_8 | UART_CONFIG_PAR_NONE | UART_CONFIG_STOP_ONE);
-	//UARTConfigSetExpClk(UART0_BASE, SysCtlClockGet(), DMXBAUD, UART_CONFIG_WLEN_8 | UART_CONFIG_PAR_NONE | UART_CONFIG_STOP_ONE);
-		
+	//UARTConfigSetExpClk(UART0_BASE, SysCtlClockGet(), DMXBAUD, UART_CONFIG_WLEN_8 | UART_CONFIG_PAR_NONE | UART_CONFIG_STOP_ONE);	
 	UARTFIFODisable(UART0_BASE);
+	
 //END/////////////Debug//////////////////////////////////////////////////////////////////////////////////
 	
 ///////////////DMX-512-A/////////////////////////////////////////////////////////////////////////////////////	
+
 	GPIOPinTypeUART(GPIOC_BASE,GPIO_PIN_5 | GPIO_PIN_4);
 	
    	// Configure UART0 to 115200 baud, 8N1 format (must be 3 clocks from clock enable and config writes)
@@ -130,6 +132,13 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	GPIOPinConfigure(GPIO_PC5_U1TX);
 	GPIOPinConfigure(GPIO_PC4_U1RX);
 
+	//TX/rx PIN
+	GPIOPadConfigSet(GPIOC_BASE,GPIO_PIN_6 ,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
+	GPIODirModeSet(GPIOC_BASE,GPIO_PIN_6 ,GPIO_DIR_MODE_OUT);
+	
+	//Fault Pin
+	GPIOPadConfigSet(GPIOC_BASE,GPIO_PIN_7,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD_WPU);
+	GPIODirModeSet(GPIOC_BASE,GPIO_PIN_7,GPIO_DIR_MODE_IN);
 //END/////////////DMX-512-A//////////////////////////////////////////////////////////////////////////////////
 
 //TIMER//
@@ -174,12 +183,13 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 int main(void)
 {
     U32 lfsr = 0xAAAAu;/* Any nonzero start state will work. */
-    U32	Time;
+//    U32	Time;
 	volatile S16 TempCh;
 	U16 In,oldIn,RxBufpt;
 	U16 Buffer[5];
 	volatile U32 BaseTime = TimeDebug1;
 	unsigned bit;
+	U8 Ms = 1;
 	U8 x;//RunOnce,
 
 	
@@ -199,7 +209,7 @@ int main(void)
 	
 	IntMasterEnable();
 		
-	Time = SysCtlClockGet();
+//	Time = SysCtlClockGet();
 	TimerEnable(TIMER0_BASE, TIMER_BOTH);
 	
 	RngFlush(&RxBufpt);
@@ -209,13 +219,14 @@ int main(void)
 	TIMER1->TAILR = 1250000;//1 / 40 
 	TIMER1->CTL |= TIMER_CTL_TAEN | TIMER_CTL_TBEN;
 	
-	GREEN_LED = 1;
+	GREEN_LED = 1;//Green to start
 	
 	x = 0;
 	
 	SpiSetup();
 	SSIIntEnable(SSI3_BASE,SSI_RXFF);
-	while(x < 20)
+	
+	while(x < 20) //Wait for a little bit after everything is setup
 	{
 		
 		if(Semaphore == 1)
@@ -225,15 +236,15 @@ int main(void)
 		}
 	}
 	
-	GREEN_LED = 0;
+	GREEN_LED = 0;//Green is off
 
 //	printf("\r\nHello World\r\n");	
 	
 //	printf("The Clock is set to %d\r\n",Time);
-	BLUE_LED = 1;
+	BLUE_LED = 1;//Blue is on
 
 	while(GPIOPinRead(GPIOF_BASE, GPIO_PIN_4));//Wait of user
-	BLUE_LED = 0;
+	BLUE_LED = 0; // Blue is now off
 
 	PingPongSemaphore =0;
 
@@ -260,12 +271,12 @@ int main(void)
 		In =  ReadAddessEXIO();
 		if(oldIn != In)
 		{
-			printf("In = %02X %s\r\n",In&0xFF,In&0x0100?"Master":"Slave");
+			printf("In = %02X %s\r\n",In&0x1FF,Ms?"Master":"Slave");
 			
 			oldIn = In;
 		}
 
-		WriteOutIOEX(lfsr|(In));
+		WriteOutIOEX(0xFF);
 		
 		if(	Semaphore != 0)
 		{	
@@ -273,6 +284,7 @@ int main(void)
 			
 			bit  = ((lfsr >> 0) ^ (lfsr >> 2) ^ (lfsr >> 3) ^ (lfsr >> 5) ) & 1;
 			lfsr =  (lfsr >> 1) | (bit << 15);
+			//WriteOutIOEX(lfsr|(In));
 		}
 		
 		TempCh = RngGet(&RxBufpt);

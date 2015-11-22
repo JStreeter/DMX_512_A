@@ -55,6 +55,7 @@ void TIMER0A_Handler()
 	{
 		if(MaxSend)
 		{
+			DEro = 1;//Turn on the abiltity for the device to transmit
 			
 			StateOfLevels = 0;
 			if(PingPongSemaphore == 0)
@@ -90,6 +91,5 @@ void TIMER1A_Handler()// 1/ 40 Seconds
 	//Auto Resets
 	TIMER0->TAILR = 5600; // 112 uSeconds
 	TIMER0->CTL |= TIMER_CTL_TAEN | TIMER_CTL_TBEN;
-	
 	Semaphore = 1;
 }

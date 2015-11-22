@@ -447,6 +447,11 @@
               <FileType>1</FileType>
               <FilePath>.\parser.c</FilePath>
             </File>
+            <File>
+              <FileName>Pins.txt</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Pins.txt</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
