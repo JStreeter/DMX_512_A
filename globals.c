@@ -8,9 +8,19 @@ U32 BBFlags;
 
 U8	A_DMX[513];//THIS IS REQUIRED FOR DMX DO NOT ASK
 U8	B_DMX[513];//THIS IS REQUIRED FOR DMX DO NOT ASK
-U8 	ShadowDMX[514];
+
+U8 	ShadowDMX[513];//The thing we play with before we transmitt
+
+U8 	IncomingDMX_A[513];
+U8 	IncomingDMX_B[513];
+
 U8 LocalHead;
-const char * StringCheck[] = {
+
+U16 Incoming_Counter;
+
+
+const char * StringCheck[] = 
+{
     "clear\0",
     "set\0",
     "get\0",
@@ -25,7 +35,7 @@ U16 MaxSend;
 void IntGlobals()
 {
 	U16 Setup;
-	
+	Incoming_Counter = 0;
 	A_DMX[0] = '0';
 	B_DMX[0] = '0';
 	PingPongSemaphore = 0;

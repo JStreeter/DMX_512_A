@@ -19,7 +19,7 @@
 #include "inc/hw_ints.h"
 #include "inc/hw_ssi.h"
 #include <string.h>
-
+#include "inc/hw_timer.h"
 
 #define MEM_BUFFER_SIZE 1024
 unsigned char 			pui8DMAControlTable[1024]__attribute__((aligned (1024*8)));//THIS IS REQUIRED FOR DMA DO NOT ASK
@@ -43,13 +43,33 @@ uint8_t 		pui8DMAControlTable[1024];//THIS IS REQUIRED FOR DMA DO NOT ASK. DO NO
  void UART1_Handler()//DMX
 {
 	volatile U8 Foo;
+	
 	if (UART1->RIS & UART_RIS_RXRIS)				//Got a Byte of Data?//RX IF
 	{
 		RED_LED ^= 1;
 		UARTIntClear(UART1_BASE,UART_INT_RX);			//Clear Flag
 		//RngAdd(UART1->DR);		//Yes this is all it does	//A
-		Foo = UART1->DR;
+		Incoming_Counter++;
+		if(Incoming_A_B)
+		{
+			IncomingDMX_A[Incoming_Counter] = UART1->DR;
+		}
+		else
+		{
+			IncomingDMX_B[Incoming_Counter] = UART1->DR;
+		}
+		
+		DATARX = 1;
+		
+		if(Incoming_Counter >= 512)
+		{
+			Incoming_Counter = 0;
+			Incoming_A_B ^= 1;
+		}
 		//Set A gloabal flag that bits have been inserted.
+		TIMER2->TAILR = 2442;//1 / ( 40 * 512 )
+		TIMER2->CTL |= TIMER_CTL_TAEN | TIMER_CTL_TBEN;
+		
 	}
 	return;
 }
@@ -204,17 +224,13 @@ void UartWrite(U8 *DataToSend, U16 Length)
 ////	// are cleared by default, but are explicitly cleared here, in case they
 ////	// were set elsewhere.
 ////	//
-	//uDMAChannelAttributeDisable(UDMA_CHANNEL_SW, UDMA_ATTR_ALL);
 	uDMAChannelAttributeDisable(UDMA_CHANNEL_UART0TX, UDMA_ATTR_ALL);
 	
 ////	//
 ////	// Now set up the characteristics of the transfer for 8-bit data size, with
 ////	// source and destination increments in bytes, and a byte-wise buffer copy.
 ////	// A bus arbitration size of 8 is used.
-////	//
-////	uDMAChannelControlSet(UDMA_CHANNEL_UART1TX | UDMA_PRI_SELECT,
-////		UDMA_SIZE_8 | UDMA_SRC_INC_8 | UDMA_DST_INC_8 | UDMA_ARB_8);
-	 uDMAChannelControlSet(  UDMA_CHANNEL_UART0TX    |
+	 uDMAChannelControlSet(  UDMA_CHANNEL_UART0TX	    |
                                 UDMA_PRI_SELECT,
                                 UDMA_SIZE_8             |
                                 UDMA_SRC_INC_8          |

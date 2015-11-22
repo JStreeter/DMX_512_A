@@ -77,6 +77,7 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);//Timer 0//Short time
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER1);//Timer 1
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER2);//Timer 1
 
     // Set GPIO ports to use APB (not needed since default configuration -- for clarity)
     // Note UART on port A must use APB
@@ -152,6 +153,11 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	TimerClockSourceSet(TIMER1_BASE,TIMER_CLOCK_SYSTEM);
 	TimerLoadSet(TIMER1_BASE,TIMER_A,TimeDebug1);//API says to use the Timer A if full width
 ///////END TIMER 1///////
+/////////TIMER 2/////////
+	TimerConfigure(TIMER2_BASE,TIMER_CFG_ONE_SHOT);
+	TimerClockSourceSet(TIMER2_BASE,TIMER_CLOCK_SYSTEM);
+	TimerLoadSet(TIMER2_BASE,TIMER_A,TimeDebug1);//API says to use the Timer A if full width
+///////END TIMER 2///////
 //END TIMER//
 	IntPrioritySet(INT_UART0, 0x05);
 	IntPrioritySet(INT_SSI3, 0x10);
@@ -183,33 +189,31 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 int main(void)
 {
     U32 lfsr = 0xAAAAu;/* Any nonzero start state will work. */
-//    U32	Time;
 	volatile S16 TempCh;
 	U16 In,oldIn,RxBufpt;
 	U16 Buffer[5];
 	volatile U32 BaseTime = TimeDebug1;
 	unsigned bit;
 	U8 Ms = 1;
-	U8 x;//RunOnce,
-
+	U8 x;
 	
 	UARTIntEnable(UART0_BASE,UART_INT_RX);
 	IntGlobals();//
 	
-	//
 	TimerIntEnable(TIMER0_BASE,TIMER_TIMA_TIMEOUT);	
 	TimerIntEnable(TIMER1_BASE,TIMER_TIMA_TIMEOUT);	
+	TimerIntEnable(TIMER2_BASE,TIMER_TIMA_TIMEOUT);	
 
 	IntEnable(INT_UART0);//DEBUG PORT
 	IntEnable(INT_TIMER0A);//The Break Before Make timer
 	IntEnable(INT_TIMER1A);// 40 hertz
+	IntEnable(INT_TIMER2A);// 40 hertz CLOCK trigger
 
 	uDMAChannelEnable(UDMA_CHANNEL_UART0TX);
 	UARTDMAEnable(UART0_BASE, UART_DMA_TX);
 	
 	IntMasterEnable();
 		
-//	Time = SysCtlClockGet();
 	TimerEnable(TIMER0_BASE, TIMER_BOTH);
 	
 	RngFlush(&RxBufpt);
@@ -257,6 +261,8 @@ int main(void)
 	TIMER1->TAILR = 1250000;//1 / 40 
 	TIMER1->CTL |= TIMER_CTL_TAEN | TIMER_CTL_TBEN;
 	lfsr =0xFFFF;
+
+//	Master_Slave the bit that shows which way it is set
 
 	printf("Ready\r\n");
 	In =  ReadAddessEXIO();

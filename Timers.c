@@ -93,3 +93,12 @@ void TIMER1A_Handler()// 1/ 40 Seconds
 	TIMER0->CTL |= TIMER_CTL_TAEN | TIMER_CTL_TBEN;
 	Semaphore = 1;
 }
+//This is the Keep safe timer for the 
+void TIMER2A_Handler()// 1/ 40 Seconds
+{
+	TimerIntClear(TIMER2_BASE,TIMER_TIMA_TIMEOUT);//TIMER TIME OUT
+	
+//	TIMER2->TAILR = 10000; // 112 uSeconds
+//	TIMER2->CTL |= TIMER_CTL_TAEN | TIMER_CTL_TBEN;
+
+}

@@ -32,11 +32,19 @@ typedef unsigned long long U64; //Standard Naming
 
 extern U8	A_DMX[513];
 extern U8	B_DMX[513];
-extern U8 	ShadowDMX[514];
+extern U8 	ShadowDMX[513];
+extern U16 	Incoming_Counter;
+extern U8 	IncomingDMX_A[513];
+extern U8 	IncomingDMX_B[513];
 extern U32 	BBFlags;
 extern U16 	MaxSend;
+
 #define PingPongSemaphore		SWREGBITW(&BBFlags, 0)
 #define LastPingPongSemaphore	SWREGBITW(&BBFlags, 1)
+#define Master_Slave			SWREGBITW(&BBFlags, 2)
+#define Incoming_A_B			SWREGBITW(&BBFlags, 3)
+#define DATARX					SWREGBITW(&BBFlags, 4)
+
 typedef enum
 {
 	Null,						//Empty
