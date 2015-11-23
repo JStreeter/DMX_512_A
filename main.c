@@ -46,7 +46,7 @@ FILE __stdout;
 ////////////////////////////////////////////////////////////////////////////////
 	// GLOBALS
 ////////////////////////////////////////////////////////////////////////////////
-//C4-C7
+
 ////////////////////////////////////////////////////////////////////////////////
 	//  CONSTANTS
 ////////////////////////////////////////////////////////////////////////////////
@@ -91,6 +91,10 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	//CCS
 	GPIOPadConfigSet(GPIOD_BASE,GPIO_PIN_1,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
 	GPIODirModeSet(GPIOD_BASE,GPIO_PIN_1,GPIO_DIR_MODE_OUT);
+	
+	//Reset Line to the IO Expander
+	GPIOPadConfigSet(GPIOD_BASE,GPIO_PIN_2,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
+	GPIODirModeSet(GPIOD_BASE,GPIO_PIN_2,GPIO_DIR_MODE_OUT);
 	
 	//Leds First
     GPIOPadConfigSet(GPIOF_BASE,GPIO_PIN_1 | GPIO_PIN_2| GPIO_PIN_3,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
@@ -165,7 +169,6 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	HIndex = 0;
 	TIndex = 0;	
 	
-	//HWREGBITW(GPIOE_BASE+GPIO_O_DATA,3) = 1;
 	return;
 }
 
@@ -197,6 +200,8 @@ int main(void)
 	U8 Ms = 1;
 	U8 x;
 	
+	IO_RESET = 0;
+	
 	UARTIntEnable(UART0_BASE,UART_INT_RX);
 	IntGlobals();//
 	
@@ -226,13 +231,12 @@ int main(void)
 	GREEN_LED = 1;//Green to start
 	
 	x = 0;
-	
+	IO_RESET = 1;
 	SpiSetup();
 	SSIIntEnable(SSI3_BASE,SSI_RXFF);
 	
 	while(x < 20) //Wait for a little bit after everything is setup
 	{
-		
 		if(Semaphore == 1)
 		{
 			Semaphore = 0;
@@ -242,9 +246,8 @@ int main(void)
 	
 	GREEN_LED = 0;//Green is off
 
-//	printf("\r\nHello World\r\n");	
+	printf("\r\nHello World\r\n");	
 	
-//	printf("The Clock is set to %d\r\n",Time);
 	BLUE_LED = 1;//Blue is on
 
 	while(GPIOPinRead(GPIOF_BASE, GPIO_PIN_4));//Wait of user
@@ -257,7 +260,6 @@ int main(void)
 	In =  ReadAddessEXIO();
 	PingPongSemaphore = 0;
 	
-
 	TIMER1->TAILR = 1250000;//1 / 40 
 	TIMER1->CTL |= TIMER_CTL_TAEN | TIMER_CTL_TBEN;
 	lfsr =0xFFFF;
@@ -282,7 +284,7 @@ int main(void)
 			oldIn = In;
 		}
 
-		WriteOutIOEX(0xFF);
+		//WriteOutIOEX(0xFF);
 		
 		if(	Semaphore != 0)
 		{	
@@ -290,7 +292,7 @@ int main(void)
 			
 			bit  = ((lfsr >> 0) ^ (lfsr >> 2) ^ (lfsr >> 3) ^ (lfsr >> 5) ) & 1;
 			lfsr =  (lfsr >> 1) | (bit << 15);
-			//WriteOutIOEX(lfsr|(In));
+			WriteOutIOEX(lfsr|(In));
 		}
 		
 		TempCh = RngGet(&RxBufpt);

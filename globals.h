@@ -29,6 +29,7 @@ typedef unsigned long long U64; //Standard Naming
 #define BLUE_LED      		(*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 2*4)))
 #define GREEN_LED   		(*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 3*4)))
 #define DEro	   			(*((volatile uint32_t *)(0x42000000 + ((GPIOC_BASE + 0x3FC) -0x40000000)*32 + 6*4)))
+#define IO_RESET	   		(*((volatile uint32_t *)(0x42000000 + ((GPIOE_BASE + 0x3FC) -0x40000000)*32 + 1*4)))
 
 extern U8	A_DMX[513];
 extern U8	B_DMX[513];
