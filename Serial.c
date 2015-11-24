@@ -43,33 +43,26 @@ uint8_t 		pui8DMAControlTable[1024];//THIS IS REQUIRED FOR DMA DO NOT ASK. DO NO
  void UART1_Handler()//DMX
 {
 	volatile U8 Foo;
+	RED_LED	= 1 ;
+	
+	if(UART1->RIS & UART_RIS_FERIS) //CHECK ON THE FRAMMING ERROR!
+	{
+		Incoming_Counter = 0;
+	}
 	
 	if (UART1->RIS & UART_RIS_RXRIS)				//Got a Byte of Data?//RX IF
 	{
 		RED_LED ^= 1;
 		UARTIntClear(UART1_BASE,UART_INT_RX);			//Clear Flag
-		//RngAdd(UART1->DR);		//Yes this is all it does	//A
 		Incoming_Counter++;
-		if(Incoming_A_B)
-		{
-			IncomingDMX_A[Incoming_Counter] = UART1->DR;
-		}
-		else
-		{
-			IncomingDMX_B[Incoming_Counter] = UART1->DR;
-		}
+
+		IncomingDMX[Incoming_Counter] = UART1->DR;
 		
-		DATARX = 1;
-		
-		if(Incoming_Counter >= 512)
+		if(Incoming_Counter == Address + 1)
 		{
-			Incoming_Counter = 0;
-			Incoming_A_B ^= 1;
+			Incoming_Counter 	= 0;
+			RXREADY 			= 1;
 		}
-		//Set A gloabal flag that bits have been inserted.
-		TIMER2->TAILR = 2442;//1 / ( 40 * 512 )
-		TIMER2->CTL |= TIMER_CTL_TAEN | TIMER_CTL_TBEN;
-		
 	}
 	return;
 }
@@ -110,6 +103,15 @@ int fputc(int ch, FILE *f)
 	UART0->DR = ch;
   return ch;
 }
+
+void DEBUGENputc(int ch) 
+{
+	/* Your implementation of fputc(). */
+	while (UART5->FR & UART_FR_TXFF);//<<<<<<-------------------------------------------WHILE!!!!
+	UART5->DR = ch;
+  return;
+}
+
 int ferror(FILE *f)
 {
   /* Your implementation of ferror(). */

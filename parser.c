@@ -73,6 +73,7 @@ void parseCommand(U8 ch)
 "max M" ----> Send up to Address M
 "poll" -----> Poll for Other devices
 
+"show" -----> Show all the dat in all the addresss
 After each command is received from the PC, the controller shall respond with “Ready” or “Error”. 
 */
 static const char HELLO3[][20] = 
@@ -111,6 +112,15 @@ void getCommand(U8 Pick[] ,U8 *maxSize)
 				{
 					ShadowDMX[j]=0;
 				}
+				if(LastPingPongSemaphore)
+				{
+					memcpy(B_DMX,ShadowDMX,513);
+				}
+				else
+				{
+					memcpy(A_DMX,ShadowDMX,513);
+				}
+				LastPingPongSemaphore ^= 1;
 				break;
 			case(1)://SET
 				Par[0] = 0;
@@ -126,6 +136,34 @@ void getCommand(U8 Pick[] ,U8 *maxSize)
 						
 					printf("Address %d == Data %d\r\n",Par[0],(U8)Par[1]);
 					ShadowDMX[Par[0]+1] = (U8)Par[1];
+					
+					if(PingPongSemaphore) //If it is set it is On B
+					{
+						printf("\r\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\r\n");						
+						memcpy(A_DMX,ShadowDMX,513);
+						printf("\r\n          %02X\r\n",B_DMX[0]);
+						for(j=1;j<513;j++)
+						{
+							printf("%3d ",A_DMX[j]);
+							if((j) %16 == 0)
+								printf("\r\n");
+						}	
+					}
+					else
+					{
+						printf("\r\nBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB\r\n");
+
+						memcpy(B_DMX,ShadowDMX,513);
+						printf("\r\n          %02X\r\n",B_DMX[0]);
+						for(j=1;j<513;j++)
+						{
+							printf("%3d ",B_DMX[j]);
+							if((j) %16 == 0)
+								printf("\r\n");
+						}
+					}
+					PingPongSemaphore ^= 1;
+						
 				}
 				else
 				{
@@ -183,7 +221,26 @@ void getCommand(U8 Pick[] ,U8 *maxSize)
 					if((j) %16 == 0)
 						printf("\r\n");
 				}
-		
+				
+				if(PingPongSemaphore == 0)
+					printf("Current Buffer A\r\n");
+				else
+					printf("Current Buffer B\r\n");
+				for(j=1;j<513;j++)
+				{
+					
+					if(PingPongSemaphore == 0)
+					{	
+						printf("%3d ",A_DMX[j]);
+					}
+					else
+					{
+						printf("%3d ",B_DMX[j]);
+					}
+					if((j) %16 == 0)
+						printf("\r\n");
+				}
+				printf("\r\n");
 				break;
 			
 			

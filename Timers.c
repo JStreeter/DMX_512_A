@@ -91,7 +91,7 @@ void TIMER1A_Handler()// 1/ 40 Seconds
 	//Auto Resets
 	TIMER0->TAILR = 5600; // 112 uSeconds
 	TIMER0->CTL |= TIMER_CTL_TAEN | TIMER_CTL_TBEN;
-	Semaphore = 1;
+	Semaphore += 1;
 }
 //This is the Keep safe timer for the 
 void TIMER2A_Handler()// 1/ 40 Seconds

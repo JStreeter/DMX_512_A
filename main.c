@@ -71,13 +71,14 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);//Leds Push Buttons
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);//A0,A1
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_UART1);//B0,B1
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_UART5);//B0,B1
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_UDMA); // Serial DMA
 	
 	SysCtlGPIOAHBDisable(SYSCTL_PERIPH_GPIOF);	//un needed
 	
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);//Timer 0//Short time
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER1);//Timer 1
-	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER2);//Timer 1
+//	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER2);//Timer 2
 
     // Set GPIO ports to use APB (not needed since default configuration -- for clarity)
     // Note UART on port A must use APB
@@ -91,6 +92,10 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	//CCS
 	GPIOPadConfigSet(GPIOD_BASE,GPIO_PIN_1,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
 	GPIODirModeSet(GPIOD_BASE,GPIO_PIN_1,GPIO_DIR_MODE_OUT);
+	
+	//Pulldowner
+	GPIOPadConfigSet(GPIOC_BASE,GPIO_PIN_7,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_OD);
+	GPIODirModeSet(GPIOC_BASE,GPIO_PIN_7,GPIO_DIR_MODE_OUT);
 	
 	//Reset Line to the IO Expander
 	GPIOPadConfigSet(GPIOD_BASE,GPIO_PIN_2,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
@@ -122,6 +127,23 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	//UARTConfigSetExpClk(UART0_BASE, SysCtlClockGet(), DMXBAUD, UART_CONFIG_WLEN_8 | UART_CONFIG_PAR_NONE | UART_CONFIG_STOP_ONE);	
 	UARTFIFODisable(UART0_BASE);
 	
+//END/////////////Debug//////////////////////////////////////////////////////////////////////////////////
+
+///////////////Debug TX ONLY!/////////////////////////////////////////////////////////////////////////////////////	
+	GPIOPinTypeUART(GPIOE_BASE,GPIO_PIN_5);
+	
+   	// Configure UART0 to 115200 baud, 8N1 format (must be 3 clocks from clock enable and config writes)
+	UARTEnable(UART5_BASE);
+	UARTClockSourceSet(UART5_BASE,UART_CLOCK_SYSTEM);
+	UARTConfigSetExpClk(UART5_BASE, SysCtlClockGet(), DMXBAUD, UART_CONFIG_WLEN_8 | UART_CONFIG_PAR_NONE | UART_CONFIG_STOP_TWO);
+	UARTFIFODisable(UART5_BASE);
+	
+	GPIOPinConfigure(GPIO_PE5_U5TX);
+
+	//TX/rx PIN
+	GPIOPadConfigSet(GPIOE_BASE,GPIO_PIN_5 ,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
+	GPIODirModeSet(GPIOE_BASE,GPIO_PIN_5 ,GPIO_DIR_MODE_OUT);
+	UARTFIFODisable(UART5_BASE);
 //END/////////////Debug//////////////////////////////////////////////////////////////////////////////////
 	
 ///////////////DMX-512-A/////////////////////////////////////////////////////////////////////////////////////	
@@ -157,11 +179,11 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	TimerClockSourceSet(TIMER1_BASE,TIMER_CLOCK_SYSTEM);
 	TimerLoadSet(TIMER1_BASE,TIMER_A,TimeDebug1);//API says to use the Timer A if full width
 ///////END TIMER 1///////
-/////////TIMER 2/////////
-	TimerConfigure(TIMER2_BASE,TIMER_CFG_ONE_SHOT);
-	TimerClockSourceSet(TIMER2_BASE,TIMER_CLOCK_SYSTEM);
-	TimerLoadSet(TIMER2_BASE,TIMER_A,TimeDebug1);//API says to use the Timer A if full width
-///////END TIMER 2///////
+///////////TIMER 2/////////
+//	TimerConfigure(TIMER2_BASE,TIMER_CFG_ONE_SHOT);
+//	TimerClockSourceSet(TIMER2_BASE,TIMER_CLOCK_SYSTEM);
+//	TimerLoadSet(TIMER2_BASE,TIMER_A,TimeDebug1);//API says to use the Timer A if full width
+/////////END TIMER 2///////
 //END TIMER//
 	IntPrioritySet(INT_UART0, 0x05);
 	IntPrioritySet(INT_SSI3, 0x10);
@@ -203,16 +225,19 @@ int main(void)
 	IO_RESET = 0;
 	
 	UARTIntEnable(UART0_BASE,UART_INT_RX);
+	UARTIntEnable(UART1_BASE,UART_INT_RX);
 	IntGlobals();//
 	
 	TimerIntEnable(TIMER0_BASE,TIMER_TIMA_TIMEOUT);	
 	TimerIntEnable(TIMER1_BASE,TIMER_TIMA_TIMEOUT);	
-	TimerIntEnable(TIMER2_BASE,TIMER_TIMA_TIMEOUT);	
+	//TimerIntEnable(TIMER2_BASE,TIMER_TIMA_TIMEOUT);	
 
 	IntEnable(INT_UART0);//DEBUG PORT
+	IntEnable(INT_UART1);//DMX PORT
+	
 	IntEnable(INT_TIMER0A);//The Break Before Make timer
 	IntEnable(INT_TIMER1A);// 40 hertz
-	IntEnable(INT_TIMER2A);// 40 hertz CLOCK trigger
+//	IntEnable(INT_TIMER2A);// 40 hertz CLOCK trigger
 
 	uDMAChannelEnable(UDMA_CHANNEL_UART0TX);
 	UARTDMAEnable(UART0_BASE, UART_DMA_TX);
@@ -232,12 +257,17 @@ int main(void)
 	
 	x = 0;
 	IO_RESET = 1;
+	DEro = 0;
 	SpiSetup();
 	SSIIntEnable(SSI3_BASE,SSI_RXFF);
 	
+	DEBUGENputc(0xA5);
+	DEBUGENputc(0x5A);
+	
+	Semaphore = 0;
 	while(x < 20) //Wait for a little bit after everything is setup
 	{
-		if(Semaphore == 1)
+		if(Semaphore >= 1)
 		{
 			Semaphore = 0;
 			x++;
@@ -253,19 +283,14 @@ int main(void)
 	while(GPIOPinRead(GPIOF_BASE, GPIO_PIN_4));//Wait of user
 	BLUE_LED = 0; // Blue is now off
 
-	PingPongSemaphore =0;
-
 	DMA_Setup_UART1();
 
 	In =  ReadAddessEXIO();
-	PingPongSemaphore = 0;
 	
-	TIMER1->TAILR = 1250000;//1 / 40 
-	TIMER1->CTL |= TIMER_CTL_TAEN | TIMER_CTL_TBEN;
 	lfsr =0xFFFF;
 
 //	Master_Slave the bit that shows which way it is set
-
+	WriteOutIOEX(0);
 	printf("Ready\r\n");
 	In =  ReadAddessEXIO();
 	oldIn = In;
@@ -280,19 +305,30 @@ int main(void)
 		if(oldIn != In)
 		{
 			printf("In = %02X %s\r\n",In&0x1FF,Ms?"Master":"Slave");
+			DEBUGENputc(0xA5);
+			DEBUGENputc(0x5A);
 			
+			IncomingDMX[0] = 0xA5;
+			IncomingDMX[1] = x++;
+			RXREADY = 1;
 			oldIn = In;
 		}
-
-		//WriteOutIOEX(0xFF);
 		
-		if(	Semaphore != 0)
+		if(	Semaphore >= 4)
 		{	
+			BLUE_LED ^= 1;
 			Semaphore = 0;
 			
-			bit  = ((lfsr >> 0) ^ (lfsr >> 2) ^ (lfsr >> 3) ^ (lfsr >> 5) ) & 1;
-			lfsr =  (lfsr >> 1) | (bit << 15);
-			WriteOutIOEX(lfsr|(In));
+//			bit  = ((lfsr >> 0) ^ (lfsr >> 2) ^ (lfsr >> 3) ^ (lfsr >> 5) ) & 1;
+//			lfsr =  (lfsr >> 1) | (bit << 15);
+//			WriteOutIOEX(lfsr);
+		}
+		
+		if(RXREADY)//The RX has set the mode
+		{
+			printf("I GOT DATA!!!\r\n %02X %02X\r\n",IncomingDMX[0],IncomingDMX[1]);
+			WriteOutIOEX(IncomingDMX[1] & 0x7F);
+			RXREADY = 0;
 		}
 		
 		TempCh = RngGet(&RxBufpt);

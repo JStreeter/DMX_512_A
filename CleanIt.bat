@@ -16,7 +16,7 @@ del *.lst
 del *.sct
 del *.__i
 del *.html
-del *.txt
+
 del *.tra
 del *.Lnp
 del *.htm
