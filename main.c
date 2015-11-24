@@ -4,7 +4,13 @@
 /// @brief   Main code to control DMX master
 /// @details 
 ////////////////////////////////////////////////////////////////////////////////
-
+/*
+C4 U1Rx
+C5 U1TX
+C6 DEro
+C7 FAULT
+D6 Override
+*/
 ////////////////////////////////////////////////////////////////////////////////
 	// INCLUDES
 ////////////////////////////////////////////////////////////////////////////////
@@ -71,7 +77,7 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);//Leds Push Buttons
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);//A0,A1
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_UART1);//B0,B1
-	SysCtlPeripheralEnable(SYSCTL_PERIPH_UART5);//B0,B1
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_UART5);//E5
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_UDMA); // Serial DMA
 	
 	SysCtlGPIOAHBDisable(SYSCTL_PERIPH_GPIOF);	//un needed
@@ -85,6 +91,7 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
     SYSCTL->GPIOHBCTL = 0;
 
 	GPIOPinWrite(GPIOE_BASE, GPIO_PIN_1, 0);//Write to the pins
+	
     // Configure LED and pushbutton pins
 	GPIOPadConfigSet(GPIOE_BASE,GPIO_PIN_3,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
 	GPIODirModeSet(GPIOE_BASE,GPIO_PIN_3,GPIO_DIR_MODE_OUT);
@@ -94,8 +101,8 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	GPIODirModeSet(GPIOD_BASE,GPIO_PIN_1,GPIO_DIR_MODE_OUT);
 	
 	//Pulldowner
-	GPIOPadConfigSet(GPIOC_BASE,GPIO_PIN_7,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_OD);
-	GPIODirModeSet(GPIOC_BASE,GPIO_PIN_7,GPIO_DIR_MODE_OUT);
+	GPIOPadConfigSet(GPIOD_BASE,GPIO_PIN_6,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_OD);
+	GPIODirModeSet(GPIOD_BASE,GPIO_PIN_6,GPIO_DIR_MODE_OUT);
 	
 	//Reset Line to the IO Expander
 	GPIOPadConfigSet(GPIOD_BASE,GPIO_PIN_2,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
@@ -131,19 +138,14 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 
 ///////////////Debug TX ONLY!/////////////////////////////////////////////////////////////////////////////////////	
 	GPIOPinTypeUART(GPIOE_BASE,GPIO_PIN_5);
-	
+	GPIOPinConfigure(GPIO_PE5_U5TX);
+
    	// Configure UART0 to 115200 baud, 8N1 format (must be 3 clocks from clock enable and config writes)
 	UARTEnable(UART5_BASE);
 	UARTClockSourceSet(UART5_BASE,UART_CLOCK_SYSTEM);
-	UARTConfigSetExpClk(UART5_BASE, SysCtlClockGet(), DMXBAUD, UART_CONFIG_WLEN_8 | UART_CONFIG_PAR_NONE | UART_CONFIG_STOP_TWO);
+	UARTConfigSetExpClk(UART5_BASE, SysCtlClockGet(), DebugBaud, UART_CONFIG_WLEN_8 | UART_CONFIG_PAR_NONE | UART_CONFIG_STOP_TWO);
 	UARTFIFODisable(UART5_BASE);
 	
-	GPIOPinConfigure(GPIO_PE5_U5TX);
-
-	//TX/rx PIN
-	GPIOPadConfigSet(GPIOE_BASE,GPIO_PIN_5 ,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
-	GPIODirModeSet(GPIOE_BASE,GPIO_PIN_5 ,GPIO_DIR_MODE_OUT);
-	UARTFIFODisable(UART5_BASE);
 //END/////////////Debug//////////////////////////////////////////////////////////////////////////////////
 	
 ///////////////DMX-512-A/////////////////////////////////////////////////////////////////////////////////////	
@@ -190,7 +192,9 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	
 	HIndex = 0;
 	TIndex = 0;	
-	
+	RED_LED = 0;
+	BLUE_LED = 0;
+	GREEN_LED = 0;
 	return;
 }
 
@@ -226,6 +230,7 @@ int main(void)
 	
 	UARTIntEnable(UART0_BASE,UART_INT_RX);
 	UARTIntEnable(UART1_BASE,UART_INT_RX);
+	//UARTIntEnable(UART5_BASE,UART_INT_TX);
 	IntGlobals();//
 	
 	TimerIntEnable(TIMER0_BASE,TIMER_TIMA_TIMEOUT);	
@@ -234,13 +239,14 @@ int main(void)
 
 	IntEnable(INT_UART0);//DEBUG PORT
 	IntEnable(INT_UART1);//DMX PORT
+	//IntEnable(INT_UART5);//DEBUG
 	
 	IntEnable(INT_TIMER0A);//The Break Before Make timer
 	IntEnable(INT_TIMER1A);// 40 hertz
-//	IntEnable(INT_TIMER2A);// 40 hertz CLOCK trigger
+//	IntEnable(INT_TIMER2A);// 40 hertz
 
-	uDMAChannelEnable(UDMA_CHANNEL_UART0TX);
-	UARTDMAEnable(UART0_BASE, UART_DMA_TX);
+	uDMAChannelEnable(UDMA_CHANNEL_UART1TX);
+	UARTDMAEnable(UART1_BASE, UART_DMA_TX);
 	
 	IntMasterEnable();
 		
@@ -260,9 +266,6 @@ int main(void)
 	DEro = 0;
 	SpiSetup();
 	SSIIntEnable(SSI3_BASE,SSI_RXFF);
-	
-	DEBUGENputc(0xA5);
-	DEBUGENputc(0x5A);
 	
 	Semaphore = 0;
 	while(x < 20) //Wait for a little bit after everything is setup
@@ -305,13 +308,19 @@ int main(void)
 		if(oldIn != In)
 		{
 			printf("In = %02X %s\r\n",In&0x1FF,Ms?"Master":"Slave");
-			DEBUGENputc(0xA5);
-			DEBUGENputc(0x5A);
 			
-			IncomingDMX[0] = 0xA5;
-			IncomingDMX[1] = x++;
-			RXREADY = 1;
+			Address = In;
 			oldIn = In;
+		}
+		
+		if(!GPIOPinRead(GPIOF_BASE, GPIO_PIN_4))
+		{
+			DEBUGENputc(0x00);
+			DEBUGENputc(x++);
+			DEBUGENputc(x++);
+			DEBUGENputc(x++);
+			RED_LED ^= 1;
+			while(!GPIOPinRead(GPIOF_BASE, GPIO_PIN_4));
 		}
 		
 		if(	Semaphore >= 4)

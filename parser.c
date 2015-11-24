@@ -85,7 +85,9 @@ static const char HELLO3[][20] =
 	"off",
 	"max",
 	"poll",
-	"show"
+	"show",
+	"master",
+	"slave"
 };
 void getCommand(U8 Pick[] ,U8 *maxSize)
 {
@@ -242,8 +244,12 @@ void getCommand(U8 Pick[] ,U8 *maxSize)
 				}
 				printf("\r\n");
 				break;
+			case(8)://master
+				
+				break;
+			case(9)://slave
 			
-			
+				break;
 			default://HACF
 				printf("Halt and Catch Fire\r\n");
 				break;

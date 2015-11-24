@@ -40,10 +40,17 @@ uint8_t 		pui8DMAControlTable[1024];//THIS IS REQUIRED FOR DMA DO NOT ASK. DO NO
 /// @details Only used for the UART ISR.
 /// @return  void  ISR
 ////////////////////////////////////////////////////////////////////////////////
- void UART1_Handler()//DMX
+void UART5_Handler()//DMX
+{
+	
+	return;
+}
+
+
+void UART1_Handler()//DMX
 {
 	volatile U8 Foo;
-	RED_LED	= 1 ;
+
 	
 	if(UART1->RIS & UART_RIS_FERIS) //CHECK ON THE FRAMMING ERROR!
 	{
@@ -52,16 +59,28 @@ uint8_t 		pui8DMAControlTable[1024];//THIS IS REQUIRED FOR DMA DO NOT ASK. DO NO
 	
 	if (UART1->RIS & UART_RIS_RXRIS)				//Got a Byte of Data?//RX IF
 	{
-		RED_LED ^= 1;
 		UARTIntClear(UART1_BASE,UART_INT_RX);			//Clear Flag
-		Incoming_Counter++;
-
-		IncomingDMX[Incoming_Counter] = UART1->DR;
+//		TIMER2->TAILR = 10000; // 112 uSeconds
+//		TIMER2->CTL |= TIMER_CTL_TAEN | TIMER_CTL_TBEN;
+		GREEN_LED ^= 1;
+		Foo = UART1->DR;
+			
+		if(Incoming_Counter == 0)
+		{
+			IncomingDMX[0] = Foo;//COMMAND
+		}
 		
 		if(Incoming_Counter == Address + 1)
 		{
-			Incoming_Counter 	= 0;
+			IncomingDMX[1] = Foo;//DATA!!!
 			RXREADY 			= 1;
+		}
+		
+		Incoming_Counter++;
+		
+		if(Incoming_Counter >= 513)
+		{
+			Incoming_Counter 	= 0;
 		}
 	}
 	return;
@@ -226,13 +245,13 @@ void UartWrite(U8 *DataToSend, U16 Length)
 ////	// are cleared by default, but are explicitly cleared here, in case they
 ////	// were set elsewhere.
 ////	//
-	uDMAChannelAttributeDisable(UDMA_CHANNEL_UART0TX, UDMA_ATTR_ALL);
+	uDMAChannelAttributeDisable(UDMA_CHANNEL_UART1TX, UDMA_ATTR_ALL);
 	
 ////	//
 ////	// Now set up the characteristics of the transfer for 8-bit data size, with
 ////	// source and destination increments in bytes, and a byte-wise buffer copy.
 ////	// A bus arbitration size of 8 is used.
-	 uDMAChannelControlSet(  UDMA_CHANNEL_UART0TX	    |
+	 uDMAChannelControlSet(  UDMA_CHANNEL_UART1TX	    |
                                 UDMA_PRI_SELECT,
                                 UDMA_SIZE_8             |
                                 UDMA_SRC_INC_8          |
@@ -244,10 +263,10 @@ void UartWrite(U8 *DataToSend, U16 Length)
 ////	// initiated transfer, a request must also be made. The request starts the
 ////	// transfer.
 ////	//
-	UARTIntEnable(UART0_BASE,UART_INT_DMATX);
+	UARTIntEnable(UART1_BASE,UART_INT_DMATX);
 
 //        // DMA channel must be enabled first, or an interrupt will occur immediately
-	uDMAChannelEnable(UDMA_CHANNEL_UART0TX);
-	UARTDMAEnable(UART0_BASE, UART_DMA_TX);
+	uDMAChannelEnable(UDMA_CHANNEL_UART1TX);
+	UARTDMAEnable(UART1_BASE, UART_DMA_TX);
 }
 

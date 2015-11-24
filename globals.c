@@ -53,7 +53,7 @@ void IntGlobals()
 	B_DMX[512] = '\n';
 	ShadowDMX[512] = 0;
 	
-	MaxSend = 0;
+	MaxSend = 4;
 	LocalHead = 0;
 	
 	return;
