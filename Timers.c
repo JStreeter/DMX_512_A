@@ -79,7 +79,7 @@ void TIMER0A_Handler()
 			uDMAChannelEnable(UDMA_CHANNEL_UART1TX);
 			UARTDMAEnable(UART1_BASE, UART_DMA_TX);
 			uDMAChannelRequest(UDMA_CHANNEL_UART1TX);
-			BLUE_LED ^= 1;
+//			BLUE_LED ^= 1;
 		}
 	}	
 
@@ -94,10 +94,14 @@ void TIMER1A_Handler()// 1/ 40 Seconds
 	TIMER0->TAILR = 4950; // 112 uSeconds
 	TIMER0->CTL |= TIMER_CTL_TAEN | TIMER_CTL_TBEN;
 	Semaphore += 1;
-	if(MaxSend)
+	if(MasterSlave == Master)
 	{
 		PULLDOWNER = 0; //OPEN DRAIN 1 is DOWN!!!
 		DEro = 1;//Turn on the abiltity for the device to transmit
+	}
+	else
+	{
+		DEro = 0;//Turn on the abiltity for the device to transmit
 	}
 	
 }

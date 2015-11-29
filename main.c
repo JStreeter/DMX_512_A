@@ -190,11 +190,11 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	IntPrioritySet(INT_UART0, 0x05);
 	IntPrioritySet(INT_SSI3, 0x10);
 	
-	HIndex = 0;
-	TIndex = 0;	
-	RED_LED = 0;
-	BLUE_LED = 0;
-	GREEN_LED = 0;
+	HIndex 		= 0;
+	TIndex 		= 0;	
+	RED_LED 	= 0;
+	BLUE_LED 	= 0;
+	GREEN_LED 	= 0;
 	return;
 }
 
@@ -228,47 +228,49 @@ int main(void)
 	
 	IO_RESET = 0;
 	
-	UARTIntEnable(UART0_BASE,UART_INT_RX);
-	UARTIntEnable(UART1_BASE,UART_INT_RX);
-	//UARTIntEnable(UART5_BASE,UART_INT_TX);
-	IntGlobals();//
+	UARTIntEnable(UART0_BASE,UART_INT_RX);				//Uart Intterrupt for USer
+	UARTIntEnable(UART1_BASE,UART_INT_RX | UART_INT_BE);//Incoming DMX PLUS frame error to reset the counter
+	//UARTIntEnable(UART5_BASE,UART_INT_TX);			//Extra uart for testing
+	IntGlobals();										// Set all of the varibles to intail settings
 	
-	TimerIntEnable(TIMER0_BASE,TIMER_TIMA_TIMEOUT);	
-	TimerIntEnable(TIMER1_BASE,TIMER_TIMA_TIMEOUT);	
-	//TimerIntEnable(TIMER2_BASE,TIMER_TIMA_TIMEOUT);	
+	TimerIntEnable(TIMER0_BASE,TIMER_TIMA_TIMEOUT);		//Short timer for the Break and MAB
+	TimerIntEnable(TIMER1_BASE,TIMER_TIMA_TIMEOUT);		// 40 Hertz timer
+	//TimerIntEnable(TIMER2_BASE,TIMER_TIMA_TIMEOUT);	//??
 
-	IntEnable(INT_UART0);//DEBUG PORT
-	IntEnable(INT_UART1);//DMX PORT
-	//IntEnable(INT_UART5);//DEBUG
+	IntEnable(INT_UART0);								//DEBUG PORT
+	IntEnable(INT_UART1);								//DMX PORT
+	IntEnable(INT_UART5);								//DEBUG TX ONLY!!! NOT FOR TRUE USE
 	
-	IntEnable(INT_TIMER0A);//The Break Before Make timer
-	IntEnable(INT_TIMER1A);// 40 hertz
-//	IntEnable(INT_TIMER2A);// 40 hertz
+	IntEnable(INT_TIMER0A);								//The Break Before Make timer
+	IntEnable(INT_TIMER1A);								// 40 hertz
+//	IntEnable(INT_TIMER2A);								// ?? hertz
 
-	uDMAChannelEnable(UDMA_CHANNEL_UART1TX);
-	UARTDMAEnable(UART1_BASE, UART_DMA_TX);
+	uDMAChannelEnable(UDMA_CHANNEL_UART1TX);			//DMA enable for the DMX transmit
+	UARTDMAEnable(UART1_BASE, UART_DMA_TX);				//GOGO GADGET DMA
 	
-	IntMasterEnable();
+	IntMasterEnable();									//Interrupts are now a GO!	
 		
-	TimerEnable(TIMER0_BASE, TIMER_BOTH);
+	TimerEnable(TIMER0_BASE, TIMER_BOTH);				//Trigger a time
 	
-	RngFlush(&RxBufpt);
+	RngFlush(&RxBufpt);									//Just too make sure there is nothing in the buffer
 	
-	Semaphore = 0;
+	Semaphore = 0;										//Setup
 	
-	TIMER1->TAILR = 1250000;//1 / 40 
-	TIMER1->CTL |= TIMER_CTL_TAEN | TIMER_CTL_TBEN;
+	TIMER1->TAILR = 1250000;//1 / 40 					//Time set to 40 hertz
+	TIMER1->CTL |= TIMER_CTL_TAEN | TIMER_CTL_TBEN;		//GO!!!
 	
-	GREEN_LED = 1;//Green to start
+	
 	
 	x = 0;
 	IO_RESET = 1;
 	DEro = 0;
-	SpiSetup();
-	SSIIntEnable(SSI3_BASE,SSI_RXFF);
+	SpiSetup();											//Spi setup
+	SSIIntEnable(SSI3_BASE,SSI_RXFF);					//Interrupt enable
 	
 	Semaphore = 0;
-	while(x < 20) //Wait for a little bit after everything is setup
+	
+	GREEN_LED = 1;										//Green to start
+	while(x < 20) 										//Wait for a little bit after everything is setup
 	{
 		if(Semaphore >= 1)
 		{
@@ -276,74 +278,86 @@ int main(void)
 			x++;
 		}
 	}
+	//Proof that it at least made it this far
+	GREEN_LED = 0;										//Green is off
+
+	printf("\r\nHello World\r\n");						//Proof that the Serial User works
 	
-	GREEN_LED = 0;//Green is off
+	BLUE_LED = 1;//Blue is on							// Waiting for ther user to press a button
 
-	printf("\r\nHello World\r\n");	
+	while(GPIOPinRead(GPIOF_BASE, GPIO_PIN_4));			//Wait of user
+	BLUE_LED = 0; 										// Blue is now off
+
+	DMA_Setup_UART1();									//Vroom Vroom!!!
 	
-	BLUE_LED = 1;//Blue is on
-
-	while(GPIOPinRead(GPIOF_BASE, GPIO_PIN_4));//Wait of user
-	BLUE_LED = 0; // Blue is now off
-
-	DMA_Setup_UART1();
-
-	In =  ReadAddessEXIO();
+	lfsr =0xFFFF;	//Debug
+														
+	WriteOutIOEX(0);									//First Write to the spi so that it setup for a read	
+	printf("Ready\r\n");								//Set to go 
 	
-	lfsr =0xFFFF;
-
-//	Master_Slave the bit that shows which way it is set
-	WriteOutIOEX(0);
-	printf("Ready\r\n");
-	In =  ReadAddessEXIO();
-	oldIn = In;
+	MasterSlave = Master;								//We start off by being master
+	
+	In =  ReadAddessEXIO();								//WHAT IS THE ADDRESS!!!!
+	oldIn = In;											//Setup
+	Address = In;										//Setup
+	
+	printf("In = %02X %s\r\n",In&0x1FF,MasterSlave==Master?"Master":"Slave");
+	
+	MaxSend = 4;										//DEBUG!!!
+	
 	while(1)
 	{			
-		
-		Buffer[0] = IO_Ex_Read | IO_Ex_0_GPIOA;
-		Buffer[1] = 0x0000;
-		ExIO(Buffer,2);
-		
-		In =  ReadAddessEXIO();
-		if(oldIn != In)
-		{
-			printf("In = %02X %s\r\n",In&0x1FF,Ms?"Master":"Slave");
+		{	// This section reads the I/O expander
+			Buffer[0] = IO_Ex_Read | IO_Ex_0_GPIOA;			
+			Buffer[1] = 0x0000;
+			ExIO(Buffer,2);
 			
-			Address = In;
-			oldIn = In;
+			In =  ReadAddessEXIO();
 		}
 		
-		if(!GPIOPinRead(GPIOF_BASE, GPIO_PIN_4))
+		if(oldIn != In)			//If there has been a change then
 		{
-			DEBUGENputc(0x00);
-			DEBUGENputc(x++);
-			DEBUGENputc(x++);
-			DEBUGENputc(x++);
-			RED_LED ^= 1;
-			while(!GPIOPinRead(GPIOF_BASE, GPIO_PIN_4));
-		}
-		
-		if(	Semaphore >= 4)
-		{	
-			BLUE_LED ^= 1;
-			Semaphore = 0;
+			printf("In = %02X %s\r\n",In&0x1FF,MasterSlave==Master?"Master":"Slave");
 			
-//			bit  = ((lfsr >> 0) ^ (lfsr >> 2) ^ (lfsr >> 3) ^ (lfsr >> 5) ) & 1;
-//			lfsr =  (lfsr >> 1) | (bit << 15);
-//			WriteOutIOEX(lfsr);
+			Address = In;		//UPDATE THE ADDRESS!!!!
+			oldIn = In;			//Prevent spam
+		}
+
+		{	//DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG 
+			if(!GPIOPinRead(GPIOF_BASE, GPIO_PIN_4))
+			{
+				Incoming_Counter= 0;
+				DEBUGENputc(0x00);
+				x++;
+				DEBUGENputc(x-1);
+				DEBUGENputc(x);
+				DEBUGENputc(x+1);
+				RED_LED ^= 1;
+				while(!GPIOPinRead(GPIOF_BASE, GPIO_PIN_4));
+			}
+		}	//DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG 
+
+		{	//Keep Alive light
+			if(	Semaphore >= 16)	
+			{	
+				BLUE_LED ^= 1;
+				Semaphore = 0;
+			}
 		}
 		
-		if(RXREADY)//The RX has set the mode
+		if(RXREADY)	//DMX has GOT SOMETHING!!!!
 		{
 			printf("I GOT DATA!!!\r\n %02X %02X\r\n",IncomingDMX[0],IncomingDMX[1]);
 			WriteOutIOEX(IncomingDMX[1] & 0x7F);
 			RXREADY = 0;
 		}
-		
-		TempCh = RngGet(&RxBufpt);
-		if(TempCh != EOF)
-		{
-			parseCommand((U8)TempCh);
+
+		{	//User input
+			TempCh = RngGet(&RxBufpt);
+			if(TempCh != EOF)
+			{
+				parseCommand((U8)TempCh);
+			}
 		}
 	}
 	//Should never end up here

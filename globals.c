@@ -17,6 +17,7 @@ U8 LocalHead;
 
 U16 Incoming_Counter;
 
+_masterslave MasterSlave;
 
 const char * StringCheck[] = 
 {
@@ -53,8 +54,8 @@ void IntGlobals()
 	B_DMX[512] = '\n';
 	ShadowDMX[512] = 0;
 	
-	MaxSend = 4;
+	MaxSend = 0;
 	LocalHead = 0;
-	
+	MasterSlave = Master;
 	return;
 }

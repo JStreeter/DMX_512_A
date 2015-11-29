@@ -102,7 +102,7 @@ void getCommand(U8 Pick[] ,U8 *maxSize)
 	do
 	{
 		Value = strstr((char*)Pick,HELLO3[i]);
-	}while(Value == 0 && i++<7);
+	}while(Value == 0 && i++<10);
 	
 	if(Value != 0)
 	{
@@ -245,10 +245,12 @@ void getCommand(U8 Pick[] ,U8 *maxSize)
 				printf("\r\n");
 				break;
 			case(8)://master
-				
+				MasterSlave = Slave;
+				printf("SLAVE\r\n");
 				break;
 			case(9)://slave
-			
+				MasterSlave = Slave;
+				printf("SLAVE\r\n");
 				break;
 			default://HACF
 				printf("Halt and Catch Fire\r\n");

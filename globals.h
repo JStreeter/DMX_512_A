@@ -18,7 +18,11 @@ typedef long long       S64;    //Standard Naming
 typedef unsigned long long U64; //Standard Naming
 
 
-
+typedef enum
+{
+	Master,
+	Slave
+}_masterslave;
 #define SWREG(x) (*((volatile uint32_t *)(x)))
 #define SWREGBITW(x, b) SWREG(((uint32_t)(x) & 0x20000000) | 0x02000000 |                     \
 							(((uint32_t)(x) & 0x000FFFFF) << 5) | ((b) << 2))
@@ -59,6 +63,8 @@ struct _DMX_Message_Flags;
 typedef struct _sQueque_Link QLink;
 typedef struct _DMX_Message DmxMessage;
 typedef struct _DMX_Message_Flags DmxFlags;
+
+extern _masterslave MasterSlave;
 
 struct _DMX_Message_Flags
 {

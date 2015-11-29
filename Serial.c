@@ -50,21 +50,20 @@ void UART5_Handler()//DMX
 void UART1_Handler()//DMX
 {
 	volatile U8 Foo;
-
 	
-	if(UART1->RIS & UART_RIS_FERIS) //CHECK ON THE FRAMMING ERROR!
+	
+	if(UART1->RIS & UART_RIS_BERIS) //CHECK ON THE FRAMMING ERROR!
 	{
+		UARTIntClear(UART1_BASE,UART_INT_BE);			//Clear Flag
 		Incoming_Counter = 0;
 	}
 	
 	if (UART1->RIS & UART_RIS_RXRIS)				//Got a Byte of Data?//RX IF
 	{
 		UARTIntClear(UART1_BASE,UART_INT_RX);			//Clear Flag
-//		TIMER2->TAILR = 10000; // 112 uSeconds
-//		TIMER2->CTL |= TIMER_CTL_TAEN | TIMER_CTL_TBEN;
-		GREEN_LED ^= 1;
+		UARTIntClear(UART1_BASE,UART_INT_BE);			//Clear Flag
 		Foo = UART1->DR;
-			
+
 		if(Incoming_Counter == 0)
 		{
 			IncomingDMX[0] = Foo;//COMMAND
@@ -72,14 +71,15 @@ void UART1_Handler()//DMX
 		
 		if(Incoming_Counter == Address + 1)
 		{
-			IncomingDMX[1] = Foo;//DATA!!!
-			RXREADY 			= 1;
+			IncomingDMX[1] 	= Foo;//DATA!!!
+			RXREADY 		= 1;
 		}
 		
 		Incoming_Counter++;
 		
 		if(Incoming_Counter >= 513)
 		{
+			
 			Incoming_Counter 	= 0;
 		}
 	}
