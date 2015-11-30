@@ -428,11 +428,6 @@
               <FilePath>.\Timers.c</FilePath>
             </File>
             <File>
-              <FileName>Debug_Parse.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Debug_Parse.c</FilePath>
-            </File>
-            <File>
               <FileName>IO_Expander.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\IO_Expander.c</FilePath>
@@ -446,11 +441,6 @@
               <FileName>parser.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\parser.c</FilePath>
-            </File>
-            <File>
-              <FileName>Pins.txt</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Pins.txt</FilePath>
             </File>
           </Files>
         </Group>

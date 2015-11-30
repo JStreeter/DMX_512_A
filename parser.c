@@ -88,7 +88,8 @@ static const char HELLO3[][20] =
 	"show",
 	"master",
 	"slave"
-};
+};	//Acceptable commands
+
 void getCommand(U8 Pick[] ,U8 *maxSize)
 {
 	U8 i;
@@ -96,7 +97,6 @@ void getCommand(U8 Pick[] ,U8 *maxSize)
 	static U16 SaveM = 0,GoGOFlag = 0;
 	
 	char* Value;
-//	printf("\r\n^-----\r\n");
 
 	i = 0;
 	do
@@ -110,6 +110,7 @@ void getCommand(U8 Pick[] ,U8 *maxSize)
 		{
 			case(0)://CLEAR
 				printf("Clear\r\n");
+				
 				for(j=0;j<514;j++)
 				{
 					ShadowDMX[j]=0;
@@ -141,7 +142,7 @@ void getCommand(U8 Pick[] ,U8 *maxSize)
 					
 					if(PingPongSemaphore) //If it is set it is On B
 					{
-						printf("\r\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\r\n");						
+//						printf("\r\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\r\n");						
 						memcpy(A_DMX,ShadowDMX,513);
 						printf("\r\n          %02X\r\n",B_DMX[0]);
 						for(j=1;j<513;j++)
@@ -153,7 +154,7 @@ void getCommand(U8 Pick[] ,U8 *maxSize)
 					}
 					else
 					{
-						printf("\r\nBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB\r\n");
+//						printf("\r\nBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB\r\n");
 
 						memcpy(B_DMX,ShadowDMX,513);
 						printf("\r\n          %02X\r\n",B_DMX[0]);
@@ -215,6 +216,25 @@ void getCommand(U8 Pick[] ,U8 *maxSize)
 				break;
 			case(6)://POLL
 				printf("EMERGANCY!!! FIRE!!! CLOSE DOWN SYSTEM AND RUN!!!\r\n");
+				//Turn on TX mode
+				//Clear
+				//Prep the data to check the range as described
+				//Send data
+				//Check for frame error
+				//Adjust the data set and check again
+				//Always check Above and below
+				
+
+/*				
+	First is dumb dumb check 
+		- Send the entire thing with all ones
+			* if there is no break... Done there are none!
+	Binary Search Find 
+			search lower then upper
+				* If there is one in both. Do single search through then entire thing
+				else 
+				* Search in the on the is occupied
+*/
 				break;
 			case(7)://Show
 				for(j=1;j<513;j++)

@@ -47,25 +47,26 @@ void TIMER0A_Handler()
 	if(StateOfLevels == 0)
 	{
 		//Release the TX line
-		TIMER0->TAILR = 450; // 12 uSeconds
+		TIMER0->TAILR = 450; 							// 12 uSeconds
 		TIMER0->CTL |= TIMER_CTL_TAEN | TIMER_CTL_TBEN;
-		StateOfLevels = 1;
+		StateOfLevels = 1;								//Increment
 		if(MaxSend)
 		{
-			PULLDOWNER = 1; //OPEN DRAIN 0 is IS Float!!!
+			PULLDOWNER = 1; //OPEN DRAIN //tested
 		}
 	}
 	else
 	{
 		if(MaxSend)
 		{
-			StateOfLevels = 0;
+			StateOfLevels = 0; 			//Reset state machine
+			
 			if(PingPongSemaphore == 0)
 			{
 				uDMAChannelTransferSet( UDMA_CHANNEL_UART1TX | UDMA_PRI_SELECT, UDMA_MODE_BASIC,
 										A_DMX,
 										(void *)(UART1_BASE + UART_O_DR),
-										MaxSend + 2);
+										MaxSend + 2);//Counting So + 1 for data byte + plus 1 for actual data
 			}
 			else
 			{
@@ -75,11 +76,11 @@ void TIMER0A_Handler()
 										MaxSend + 2);//Counting So + 1 for data byte + plus 1 for actual data
 			}
 			
-			LastPingPongSemaphore = PingPongSemaphore;
-			uDMAChannelEnable(UDMA_CHANNEL_UART1TX);
-			UARTDMAEnable(UART1_BASE, UART_DMA_TX);
-			uDMAChannelRequest(UDMA_CHANNEL_UART1TX);
-//			BLUE_LED ^= 1;
+			LastPingPongSemaphore = PingPongSemaphore; //Indicates which one is ready to be written in outside of the Interrupt
+			
+			uDMAChannelEnable(UDMA_CHANNEL_UART1TX);	//DMA stuff
+			UARTDMAEnable(UART1_BASE, UART_DMA_TX);		//DMA stuff
+			uDMAChannelRequest(UDMA_CHANNEL_UART1TX);	//DMA stuff
 		}
 	}	
 
@@ -91,20 +92,23 @@ void TIMER1A_Handler()// 1/ 40 Seconds
 	TimerIntClear(TIMER1_BASE,TIMER_TIMA_TIMEOUT);//TIMER TIME OUT
 	//Set the Time 0 and drop the TX line
 	//Auto Resets
-	TIMER0->TAILR = 4950; // 112 uSeconds
+	TIMER0->TAILR = 4950; 	// 112 uSeconds
 	TIMER0->CTL |= TIMER_CTL_TAEN | TIMER_CTL_TBEN;
-	Semaphore += 1;
+	
+	Semaphore += 1; 		//Not a semaphore
+	
 	if(MasterSlave == Master)
 	{
-		PULLDOWNER = 0; //OPEN DRAIN 1 is DOWN!!!
-		DEro = 1;//Turn on the abiltity for the device to transmit
+		PULLDOWNER = 0; 	//OPEN DRAIN 1 is DOWN!!!
+		DEro = 1;			//Turn on the abiltity for the device to transmit
 	}
 	else
 	{
-		DEro = 0;//Turn on the abiltity for the device to transmit
+		DEro = 0;			//Turn on the abiltity for the device to transmit
 	}
 	
 }
+
 //This is the Keep safe timer for the 
 void TIMER2A_Handler()// 1/ 40 Seconds
 {

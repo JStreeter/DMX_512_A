@@ -40,9 +40,8 @@ uint8_t 		pui8DMAControlTable[1024];//THIS IS REQUIRED FOR DMA DO NOT ASK. DO NO
 /// @details Only used for the UART ISR.
 /// @return  void  ISR
 ////////////////////////////////////////////////////////////////////////////////
-void UART5_Handler()//DMX
+void UART5_Handler()	//Nope
 {
-	
 	return;
 }
 
@@ -91,30 +90,32 @@ void UART1_Handler()//DMX
 	 uint32_t status;
 	if (UART0->RIS & UART_RIS_RXRIS)				//Got a Byte of Data?//RX IF
 	{
-		GREEN_LED ^= 1;
-		UARTIntClear(UART0_BASE,UART_INT_RX);			//Clear Flag
+		GREEN_LED ^= 1;								//Toggle Green led to show it is working
+		UARTIntClear(UART0_BASE,UART_INT_RX);		//Clear Flag
 		RngAdd(UART0->DR & 0xFF);		//Yes this is all it does	//A
 	}
+	
     // If RX channel no longer enabled, receive finished
     if (!uDMAChannelIsEnabled(UDMA_CHANNEL_UART0RX))
     {
-
+		//nope
     }
+	
     // Else if TX channel no longer enabled, transmit finished
     else if (! uDMAChannelIsEnabled(UDMA_CHANNEL_UART0TX))
     {
-        UARTDMADisable(UART0_BASE, UART_DMA_TX);
+        UARTDMADisable(UART0_BASE, UART_DMA_TX);	
     }
 
-    status = UARTIntStatus(UART0_BASE, true);
-    UARTIntClear(UART0_BASE, status);
+    status = UARTIntStatus(UART0_BASE, true);	//
+    UARTIntClear(UART0_BASE, status);			//
 
 	return;
 }
 ///////////////////////////////////////////////////////// 
 
 /* FILE is typedef’d in stdio.h. */
-
+//this is so the printf works!
 int fputc(int ch, FILE *f) 
 {
 	/* Your implementation of fputc(). */
@@ -122,7 +123,7 @@ int fputc(int ch, FILE *f)
 	UART0->DR = ch;
   return ch;
 }
-
+//This... this is just for testing...
 void DEBUGENputc(int ch) 
 {
 	/* Your implementation of fputc(). */
@@ -131,6 +132,7 @@ void DEBUGENputc(int ch)
   return;
 }
 
+//Nope
 int ferror(FILE *f)
 {
   /* Your implementation of ferror(). */
