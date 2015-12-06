@@ -29,6 +29,7 @@ D6 Override
 #include "inc/hw_ssi.h"
 #include "inc/hw_uart.h"
 
+#include "driverlib/pwm.h"
 #include "driverlib/interrupt.h"
 #include "driverlib/cpu.h"
 #include "driverlib/debug.h"
@@ -65,7 +66,7 @@ FILE __stdout;
 void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 {
 	//Main set
-	SysCtlClockSet(SYSCTL_SYSDIV_4|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN);
+	SysCtlClockSet(SYSCTL_SYSDIV_4|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN | SYSCTL_RCC_USEPWMDIV | SYSCTL_RCC_PWMDIV_64);
 	
 	//Perhial Clock enable
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);//UART0Pins
@@ -77,13 +78,14 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);//A0,A1
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_UART1);//B0,B1
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_UART5);//E5
-	SysCtlPeripheralEnable(SYSCTL_PERIPH_UDMA); // Serial DMA
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_UDMA); //Serial DMA
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_PWM1); //Servo
 	
 	SysCtlGPIOAHBDisable(SYSCTL_PERIPH_GPIOF);	//un needed
 	
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);//Timer 0//Short time
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER1);//Timer 1
-//	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER2);//Timer 2
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER2);//Timer 2
 
     // Set GPIO ports to use APB (not needed since default configuration -- for clarity)
     // Note UART on port A must use APB
@@ -108,8 +110,17 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	GPIODirModeSet(GPIOD_BASE,GPIO_PIN_2,GPIO_DIR_MODE_OUT);
 	
 	//Leds First
-    GPIOPadConfigSet(GPIOF_BASE,GPIO_PIN_1 | GPIO_PIN_2| GPIO_PIN_3,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
-	GPIODirModeSet(GPIOF_BASE,GPIO_PIN_1 | GPIO_PIN_2| GPIO_PIN_3,GPIO_DIR_MODE_OUT);
+//    GPIOPadConfigSet(GPIOF_BASE,GPIO_PIN_1 | GPIO_PIN_2| GPIO_PIN_3,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
+//	GPIODirModeSet(GPIOF_BASE,GPIO_PIN_1 | GPIO_PIN_2| GPIO_PIN_3,GPIO_DIR_MODE_OUT);
+	
+    GPIOPadConfigSet(GPIOF_BASE,GPIO_PIN_1 |  GPIO_PIN_3,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
+	GPIODirModeSet(GPIOF_BASE,GPIO_PIN_1 |  GPIO_PIN_3,GPIO_DIR_MODE_OUT);
+	//Leds First Blue PWM
+	GPIOPadConfigSet(GPIOF_BASE,GPIO_PIN_2,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
+	GPIODirModeSet(GPIOF_BASE,GPIO_PIN_2,GPIO_DIR_MODE_HW);
+		//I/O
+	GPIOPinConfigure(GPIO_PF2_M1PWM6);
+	
 	
 	//Push Buttons
 	GPIOPadConfigSet(GPIOF_BASE,GPIO_PIN_0 | GPIO_PIN_4,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD_WPU);
@@ -181,9 +192,9 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	TimerLoadSet(TIMER1_BASE,TIMER_A,TimeDebug1);//API says to use the Timer A if full width
 ///////END TIMER 1///////
 ///////////TIMER 2/////////
-//	TimerConfigure(TIMER2_BASE,TIMER_CFG_ONE_SHOT);
-//	TimerClockSourceSet(TIMER2_BASE,TIMER_CLOCK_SYSTEM);
-//	TimerLoadSet(TIMER2_BASE,TIMER_A,TimeDebug1);//API says to use the Timer A if full width
+	TimerConfigure(TIMER2_BASE,TIMER_CFG_ONE_SHOT);
+	TimerClockSourceSet(TIMER2_BASE,TIMER_CLOCK_SYSTEM);
+	TimerLoadSet(TIMER2_BASE,TIMER_A,TimeDebug1);//API says to use the Timer A if full width
 /////////END TIMER 2///////
 //END TIMER//
 	IntPrioritySet(INT_UART0, 0x05);
@@ -216,13 +227,14 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 
 int main(void)
 {
-    U32 lfsr = 0xAAAAu;/* Any nonzero start state will work. */
+//    U32 lfsr = 0xAAAAu;/* Any nonzero start state will work. */
 	volatile S16 TempCh;
 	U16 In,oldIn,RxBufpt;
 	U16 Buffer[5];
+	U32 PWM;
 	volatile U32 BaseTime = TimeDebug1;
-	unsigned bit;
-	U8 Ms = 1;
+//	unsigned bit;
+//	U8 Ms = 1;
 	U8 x;
 	
 	IO_RESET = 0;
@@ -234,7 +246,7 @@ int main(void)
 	
 	TimerIntEnable(TIMER0_BASE,TIMER_TIMA_TIMEOUT);		//Short timer for the Break and MAB
 	TimerIntEnable(TIMER1_BASE,TIMER_TIMA_TIMEOUT);		// 40 Hertz timer
-	//TimerIntEnable(TIMER2_BASE,TIMER_TIMA_TIMEOUT);	//??
+	TimerIntEnable(TIMER2_BASE,TIMER_TIMA_TIMEOUT);	//??
 
 	IntEnable(INT_UART0);								//DEBUG PORT
 	IntEnable(INT_UART1);								//DMX PORT
@@ -242,7 +254,7 @@ int main(void)
 	
 	IntEnable(INT_TIMER0A);								//The Break Before Make timer
 	IntEnable(INT_TIMER1A);								// 40 hertz
-//	IntEnable(INT_TIMER2A);								// ?? hertz
+	IntEnable(INT_TIMER2A);								// 20ms
 
 	uDMAChannelEnable(UDMA_CHANNEL_UART1TX);			//DMA enable for the DMX transmit
 	UARTDMAEnable(UART1_BASE, UART_DMA_TX);				//GOGO GADGET DMA
@@ -288,8 +300,6 @@ int main(void)
 	BLUE_LED = 0; 										// Blue is now off
 
 	DMA_Setup_UART1();									//Vroom Vroom!!!
-	
-	lfsr =0xFFFF;	//Debug
 														
 	WriteOutIOEX(0);									//First Write to the spi so that it setup for a read	
 	printf("Ready\r\n");								//Set to go 
@@ -304,6 +314,9 @@ int main(void)
 	
 	MaxSend = 4;										//DEBUG!!!
 	
+	PWM_Setup();
+	
+	PWM = 0;
 	while(1)
 	{			
 		{	// This section reads the I/O expander
@@ -337,10 +350,15 @@ int main(void)
 		}	//DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG 
 
 		{	//Keep Alive light
-			if(	Semaphore >= 16)	
+			if(	Semaphore >= 2)	
 			{	
-				BLUE_LED ^= 1;
+				//BLUE_LED ^= 1;
 				Semaphore = 0;
+				printf("%d\r\n",PWM);
+				PWM += MAXPERIOD / 10;
+				if(PWM >= MAXPERIOD) PWM = 0;
+				
+				PWMPulseWidthSet(PWM1_BASE, PWM_OUT_6, PWM);
 			}
 		}
 		

@@ -30,7 +30,9 @@ typedef enum
 //#define PULSETEST      		(*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 1*4)))
 #define CS      			(*((volatile uint32_t *)(0x42000000 + (0x400073FC-0x40000000)*32 + 1*4)))
 #define RED_LED      		(*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 1*4)))
-#define BLUE_LED      		(*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 2*4)))
+//#define BLUE_LED      		(*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 2*4)))
+#warning BLUE LED IS RUINED!!!
+#define BLUE_LED      		(*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 8*4)))
 #define GREEN_LED   		(*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 3*4)))
 #define DEro	   			(*((volatile uint32_t *)(0x42000000 + ((GPIOC_BASE + 0x3FC) -0x40000000)*32 + 6*4)))
 #define PULLDOWNER 			(*((volatile uint32_t *)(0x42000000 + ((GPIOD_BASE + 0x3FC) -0x40000000)*32 + 6*4)))
