@@ -67,6 +67,7 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 {
 	//Main set
 	SysCtlClockSet(SYSCTL_SYSDIV_4|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN | SYSCTL_RCC_USEPWMDIV | SYSCTL_RCC_PWMDIV_64);
+	HWREG(SYSCTL_RCC) |= SYSCTL_RCC_USEPWMDIV | SYSCTL_RCC_PWMDIV_64;
 	
 	//Perhial Clock enable
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);//UART0Pins
@@ -315,7 +316,7 @@ int main(void)
 	MaxSend = 4;										//DEBUG!!!
 	
 	PWM_Setup();
-	
+	HWREG(SYSCTL_RCC) |= SYSCTL_RCC_USEPWMDIV | SYSCTL_RCC_PWMDIV_64;
 	PWM = 0;
 	while(1)
 	{			
@@ -330,7 +331,7 @@ int main(void)
 		if(oldIn != In)			//If there has been a change then
 		{
 			printf("In = %02X %s\r\n",In&0x1FF,MasterSlave==Master?"Master":"Slave");
-			
+			printf("%d \r\n",PWMClockGet(PWM1_BASE));
 			Address = In;		//UPDATE THE ADDRESS!!!!
 			oldIn = In;			//Prevent spam
 		}
@@ -350,14 +351,17 @@ int main(void)
 		}	//DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG 
 
 		{	//Keep Alive light
-			if(	Semaphore >= 2)	
+			if(	Semaphore >= 16)	
 			{	
+				
 				//BLUE_LED ^= 1;
 				Semaphore = 0;
-				printf("%d\r\n",PWM);
-				PWM += MAXPERIOD / 10;
-				if(PWM >= MAXPERIOD) PWM = 0;
-				
+			//	printf("%d\r\n",PWM);
+				//390 	//1 ms
+				//1,562 // 2 ms
+				PWM += (1952-390) / 128;
+				if(PWM >= 1952) PWM = 390;
+			
 				PWMPulseWidthSet(PWM1_BASE, PWM_OUT_6, PWM);
 			}
 		}

@@ -22,7 +22,7 @@
 #define DMXBAUD		250000
 #define DebugBaud	250000//115200
 #define TimeDebug1	1250000//(0x2FAF080>>4)
-#define MAXPERIOD	0xFFFF//62500
+#define MAXPERIOD	15625//0xFFFF//62500
 
 ////////////////////////////////////////////////////////////////////////////////
 	// EXTERNS

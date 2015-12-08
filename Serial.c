@@ -71,9 +71,13 @@ void UART1_Handler()//DMX
 		if(Incoming_Counter == Address + 1)
 		{
 			IncomingDMX[1] 	= Foo;//DATA!!!
-			RXREADY 		= 1;
 		}
 		
+		if(Incoming_Counter == Address + 2)
+		{
+			IncomingDMX[2] 	= Foo;//DATA!!!
+			RXREADY 		= 1;
+		}
 		Incoming_Counter++;
 		
 		if(Incoming_Counter >= 513)

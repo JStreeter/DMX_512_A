@@ -42,7 +42,7 @@ extern U8	A_DMX[513];
 extern U8	B_DMX[513];
 extern U8 	ShadowDMX[513];
 extern U16 	Incoming_Counter;
-extern U8 	IncomingDMX[2];
+extern U8 	IncomingDMX[6];
 extern U16 	Address;
 extern U32 	BBFlags;
 extern U16 	MaxSend;
