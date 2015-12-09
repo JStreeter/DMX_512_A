@@ -64,57 +64,70 @@ void UART1_Handler()//DMX
 		TIMER0->CTL |= TIMER_CTL_TAEN | TIMER_CTL_TBEN;
 	}
 	
+	if (UART1->RIS & UART_RIS_RXRIS )				//Got a Byte of Data?//RX IF
+	{
+		UARTIntClear(UART1_BASE,UART_INT_RX);			//Clear Flag
+		UARTIntClear(UART1_BASE,UART_INT_BE);			//Clear Flag
+		Foo = UART1->DR;
+		
+		if( !(UART1->RIS & UART_RIS_BERIS))
+		{
+			if(Incoming_Counter == 0)
+			{
+				IncomingDMX[0] = Foo;		//Command is the first byte
+				if(IncomingDMX[0] == 0xF0)	//THe is is a poll request
+				{
+					ThePollTrigger = true;	//This triggers the break mode.
+				}
+				else
+				{
+					ThePollTrigger = false;	//This triggers the break mode.
+				}
+			}
+			
+			if(Incoming_Counter == Address + 1)	//LED
+			{
+				IncomingDMX[1] 	= Foo;//DATA!!!
+			}
+			
+			if(Incoming_Counter == Address + 2)//Servo
+			{
+				IncomingDMX[2] 		= Foo;//DATA!!!
+				Incoming_Counter 	= 514;	//there is no data after this
+				RXREADY 			= true;
+				
+			}
+			
+			Incoming_Counter++;//Increament the counter
+			
+			
+			if(ThePollTrigger && Incoming_Counter == 513)
+			{
+				
+				//TRIGGERBREAK 100us then
+				TIMER0->TAILR 		= 4950; 	// 112 uSeconds
+				TIMER0->CTL 		|= TIMER_CTL_TAEN | TIMER_CTL_TBEN;//GOGO!
+				DEro 				= 1;	//The TX is on 100us to go!
+				PULLDOWNER			= 0;	//BREAK!!!
+			}
+			
+			
+			if(Incoming_Counter >= 513)//past our data set... Weird... Ignore it... it will reset on the Break
+			{
+				Incoming_Counter 	= 514;
+			}
+		}
+	}
+	
 	if(UART1->RIS & UART_RIS_BERIS) //Check the break
 	{
 		UARTIntClear(UART1_BASE,UART_INT_BE);	//Clear Flag
 		Incoming_Counter 	= 0;				//Clear it
 		BREAK 				= true;				//break happened
+		RED_LED ^= 1;
 	}
 	
-	if (UART1->RIS & UART_RIS_RXRIS)				//Got a Byte of Data?//RX IF
-	{
-		UARTIntClear(UART1_BASE,UART_INT_RX);			//Clear Flag
-		UARTIntClear(UART1_BASE,UART_INT_BE);			//Clear Flag
-		Foo = UART1->DR;
-
-		if(Incoming_Counter == 0)
-		{
-			IncomingDMX[0] = Foo;		//Command is the first byte
-			if(IncomingDMX[0] == 0xF0)	//THe is is a poll request
-			{
-				ThePollTrigger = true;	//This triggers the break mode.
-			}
-		}
-		
-		if(Incoming_Counter == Address + 1 && !ThePollTrigger)	//LED
-		{
-			IncomingDMX[1] 	= Foo;//DATA!!!
-		}
-		
-		if(Incoming_Counter == Address + 2 && !ThePollTrigger)//Servo
-		{
-			IncomingDMX[2] 		= Foo;//DATA!!!
-			Incoming_Counter 	= 514;	//there is no data after this
-			RXREADY 			= true;
-		}
-		
-		Incoming_Counter++;//Increament the counter
-		
-		
-		if(ThePollTrigger && Incoming_Counter == 513)
-		{
-			//TRIGGERBREAK 100us then
-			TIMER0->TAILR 		= 4950; 	// 112 uSeconds
-			TIMER0->CTL 		|= TIMER_CTL_TAEN | TIMER_CTL_TBEN;//GOGO!
-			DEro 				= 1;	//The TX is on 100us to go!
-			PULLDOWNER			= 0;	//BREAK!!!
-		}
-		
-		if(Incoming_Counter >= 513)//past our data set... Weird... Ignore it... it will reset on the Break
-		{
-			Incoming_Counter 	= 514;
-		}
-	}
+	
 	return;
 }
 

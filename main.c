@@ -231,14 +231,15 @@ int main(void)
 	volatile S16 TempCh;	//for the user input
 	U16 In,oldIn,RxBufpt;	//
 	U16 Buffer[5];
-	U32 PWM;
+	U32 PWM,j;
 	volatile U32 BaseTime = TimeDebug1;
 	U8 x;
 	
 	IO_RESET = 0;
 	
 	UARTIntEnable(UART0_BASE,UART_INT_RX );				//Uart Intterrupt for USer
-	UARTIntEnable(UART1_BASE,UART_INT_RX | UART_INT_BE);//Incoming DMX PLUS frame error to reset the counter
+	UARTIntEnable(UART1_BASE,UART_INT_RX );//Incoming DMX PLUS frame error to reset the counter
+	UARTIntEnable(UART1_BASE,UART_INT_BE);
 	//UARTIntEnable(UART5_BASE,UART_INT_TX);			//Extra uart for testing
 	IntGlobals();										// Set all of the varibles to intail settings
 	
@@ -291,7 +292,7 @@ int main(void)
 	
 	BLUE_LED = 1;//Blue is on							// Waiting for ther user to press a button
 
-	while(GPIOPinRead(GPIOF_BASE, GPIO_PIN_4));			//Wait of user
+//	while(GPIOPinRead(GPIOF_BASE, GPIO_PIN_4));			//Wait of user
 	BLUE_LED = 0; 										// Blue is now off
 
 	DMA_Setup_UART1();									//Vroom Vroom!!!
@@ -352,6 +353,13 @@ int main(void)
 		
 		if(RXREADY)	//DMX has GOT SOMETHING!!!!
 		{
+//			printf("\r\n %3d %3d %3d %02X\r\n",Address,Address+1,Address+2,ShadowDMX[0]);
+//			for(j=1;j<513;j++)
+//			{
+//				printf("%3d ",ShadowDMX[j]);
+//				if((j) %16 == 0)
+//					printf("\r\n");
+//			}	
 			printf("Data -> %02X %02X %02X\r\n",IncomingDMX[0],IncomingDMX[1],IncomingDMX[2]);
 			
 			WriteOutIOEX(IncomingDMX[1] & 0x7F);	//Push to the leds

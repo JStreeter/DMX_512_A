@@ -93,7 +93,7 @@ static const char HELLO3[][20] =
 void getCommand(U8 Pick[] ,U8 *maxSize)
 {
 	U8 i;
-	U16 j,k,x,Input,Par[4];
+	U16 j,k,Input,Par[4];
 	static U16 SaveM = 0,GoGOFlag = 0;
 	
 	char* Value;
@@ -298,10 +298,12 @@ void getCommand(U8 Pick[] ,U8 *maxSize)
 				printf("\r\n");
 				break;
 			case(8)://master
+				ThePollTrigger = 0;
 				MasterSlave = Master;
 				printf("MASTER\r\n");
 				break;
 			case(9)://slave
+				ThePollTrigger = 0;
 				MasterSlave = Slave;
 				printf("SLAVE\r\n");
 				break;
