@@ -167,7 +167,6 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	UARTEnable(UART1_BASE);
 	UARTClockSourceSet(UART1_BASE,UART_CLOCK_SYSTEM);
 	UARTConfigSetExpClk(UART1_BASE, SysCtlClockGet(), DMXBAUD, UART_CONFIG_WLEN_8 | UART_CONFIG_PAR_NONE | UART_CONFIG_STOP_TWO);
-	UARTFIFODisable(UART1_BASE);
 	
 	GPIOPinConfigure(GPIO_PC5_U1TX);
 	GPIOPinConfigure(GPIO_PC4_U1RX);
@@ -240,7 +239,7 @@ int main(void)
 	
 	IO_RESET = 0;
 	
-	UARTIntEnable(UART0_BASE,UART_INT_RX);				//Uart Intterrupt for USer
+	UARTIntEnable(UART0_BASE,UART_INT_RX | UART_INT_DMATX);				//Uart Intterrupt for USer
 	UARTIntEnable(UART1_BASE,UART_INT_RX | UART_INT_BE);//Incoming DMX PLUS frame error to reset the counter
 	//UARTIntEnable(UART5_BASE,UART_INT_TX);			//Extra uart for testing
 	IntGlobals();										// Set all of the varibles to intail settings
@@ -318,6 +317,10 @@ int main(void)
 	PWM_Setup();
 	HWREG(SYSCTL_RCC) |= SYSCTL_RCC_USEPWMDIV | SYSCTL_RCC_PWMDIV_64;
 	PWM = 0;
+	
+	PWM += ( ( (1952-390) / 128 ) * 64 ) + 1;
+	PWMPulseWidthSet(PWM1_BASE, PWM_OUT_6, PWM);
+	
 	while(1)
 	{			
 		{	// This section reads the I/O expander
@@ -351,7 +354,7 @@ int main(void)
 		}	//DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG 
 
 		{	//Keep Alive light
-			if(	Semaphore >= 16)	
+			if(	Semaphore >= 1)	
 			{	
 				
 				//BLUE_LED ^= 1;
@@ -359,18 +362,21 @@ int main(void)
 			//	printf("%d\r\n",PWM);
 				//390 	//1 ms
 				//1,562 // 2 ms
-				PWM += (1952-390) / 128;
+				PWM += (1952-390) / 64;
 				if(PWM >= 1952) PWM = 390;
-			
 				PWMPulseWidthSet(PWM1_BASE, PWM_OUT_6, PWM);
+				WriteOutIOEX(PWM>>3);
+//				
 			}
 		}
 		
 		if(RXREADY)	//DMX has GOT SOMETHING!!!!
 		{
-			printf("I GOT DATA!!!\r\n %02X %02X\r\n",IncomingDMX[0],IncomingDMX[1]);
+			printf("I GOT DATA!!!\r\n %02X %02X %02X\r\n",IncomingDMX[0],IncomingDMX[1],IncomingDMX[2]);
 			WriteOutIOEX(IncomingDMX[1] & 0x7F);
-			RXREADY = 0;
+			PWM = 390 + ( ( (1952-390) / 128) * (IncomingDMX[2] % 129) ); 
+			PWMPulseWidthSet(PWM1_BASE, PWM_OUT_6, PWM);
+			RXREADY = false;
 		}
 
 		{	//User input

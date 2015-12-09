@@ -158,7 +158,7 @@ void getCommand(U8 Pick[] ,U8 *maxSize)
 
 						memcpy(B_DMX,ShadowDMX,513);
 						printf("\r\n          %02X\r\n",B_DMX[0]);
-						for(j=1;j<513;j++)
+						for(j=0;j<513;j++)
 						{
 							printf("%3d ",B_DMX[j]);
 							if((j) %16 == 0)
@@ -216,13 +216,23 @@ void getCommand(U8 Pick[] ,U8 *maxSize)
 				break;
 			case(6)://POLL
 				printf("EMERGANCY!!! FIRE!!! CLOSE DOWN SYSTEM AND RUN!!!\r\n");
-				//Turn on TX mode
-				//Clear
-				//Prep the data to check the range as described
-				//Send data
-				//Check for frame error
-				//Adjust the data set and check again
-				//Always check Above and below
+				SaveM = MaxSend;
+				MaxSend = 511;
+				
+				for( j = 1 ; j <= SaveM; j++ )
+				{
+					//Turn on TX mode
+					//Clear
+					//Prep the data to check the range as described
+					//Send data
+					//Check for frame error
+					//Adjust the data set and check again
+					//Always check Above and below
+				}
+				
+				
+				
+				
 				
 
 /*				
@@ -235,6 +245,7 @@ void getCommand(U8 Pick[] ,U8 *maxSize)
 				else 
 				* Search in the on the is occupied
 */
+					MaxSend = SaveM;
 				break;
 			case(7)://Show
 				for(j=1;j<513;j++)

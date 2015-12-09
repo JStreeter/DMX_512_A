@@ -36,6 +36,10 @@ void IntGlobals()
 {
 	U16 Setup;
 	Incoming_Counter = 0;
+	
+	ThePollTrigger 	= false;
+	BREAK 			= false;
+	
 	A_DMX[0] = '0';
 	B_DMX[0] = '0';
 	PingPongSemaphore = 0;

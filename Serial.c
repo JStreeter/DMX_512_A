@@ -51,10 +51,22 @@ void UART1_Handler()//DMX
 	volatile U8 Foo;
 	
 	
+	if(UART1->RIS & UART_RIS_DMATXRIS) //CHECK ON THE FRAMMING ERROR!
+	{
+		UARTIntClear(UART1_BASE,UART_INT_DMATX);			//Clear Flag
+		/*
+			
+		*/
+		RED_LED ^= 1;
+		BREAK |=  true;
+	}
+	
 	if(UART1->RIS & UART_RIS_BERIS) //CHECK ON THE FRAMMING ERROR!
 	{
 		UARTIntClear(UART1_BASE,UART_INT_BE);			//Clear Flag
-		Incoming_Counter = 0;
+		Incoming_Counter 	= 0;
+		BREAK 				= true;//break happened
+//		RED_LED ^= 1;
 	}
 	
 	if (UART1->RIS & UART_RIS_RXRIS)				//Got a Byte of Data?//RX IF
@@ -66,24 +78,48 @@ void UART1_Handler()//DMX
 		if(Incoming_Counter == 0)
 		{
 			IncomingDMX[0] = Foo;//COMMAND
+			if(IncomingDMX[0] == 0xF0)
+			{
+				//This triggers the break mode.
+				ThePollTrigger = true;
+			}
 		}
 		
-		if(Incoming_Counter == Address + 1)
+		if(Incoming_Counter == Address + 1)	//LED
 		{
 			IncomingDMX[1] 	= Foo;//DATA!!!
+//			if(ThePollTrigger)
+//			{
+//				
+//			
+//			//	Incoming_Counter 	= 514;	//there is no data after this
+//				//no need to return early. as the counter is > 513
+//			}
 		}
 		
-		if(Incoming_Counter == Address + 2)
+		if(Incoming_Counter == Address + 2)//Servo
 		{
-			IncomingDMX[2] 	= Foo;//DATA!!!
-			RXREADY 		= 1;
+			IncomingDMX[2] 		= Foo;//DATA!!!
+			RXREADY 			= true;
+			if(!ThePollTrigger)
+				Incoming_Counter 	= 514;	//there is no data after this
 		}
-		Incoming_Counter++;
 		
-		if(Incoming_Counter >= 513)
+		Incoming_Counter++;//Increament the counter
+		
+		
+		if(ThePollTrigger && Incoming_Counter == 513)
 		{
-			
-			Incoming_Counter 	= 0;
+			//TRIGGERBREAK 100us then
+			TIMER0->TAILR 		= 4950; 	// 112 uSeconds
+			TIMER0->CTL 		|= TIMER_CTL_TAEN | TIMER_CTL_TBEN;//GOGO!
+			DEro 				= 1;	//The TX is on 100us to go!
+			PULLDOWNER			= 0;	//BREAK!!!
+		}
+		
+		if(Incoming_Counter >= 513)//past our data set... Weird... Ignore it... it will reset on the Break
+		{
+			Incoming_Counter 	= 514;
 		}
 	}
 	return;

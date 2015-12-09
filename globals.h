@@ -51,7 +51,8 @@ extern U16 	MaxSend;
 #define LastPingPongSemaphore	SWREGBITW(&BBFlags, 1)
 #define Master_Slave			SWREGBITW(&BBFlags, 2)
 #define RXREADY					SWREGBITW(&BBFlags, 3)
-
+#define ThePollTrigger			SWREGBITW(&BBFlags, 4)
+#define BREAK					SWREGBITW(&BBFlags, 5)
 
 typedef enum
 {

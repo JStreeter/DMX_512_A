@@ -44,6 +44,14 @@ void TIMER0A_Handler()
 	//110 uS have already Passed.
 	//OR
 	//14 uS have passed and the data should shart sending
+	if(ThePollTrigger)
+	{
+		ThePollTrigger 	= false;//We are done with this
+		DEro 			= 0;	//Turn off the abiltity for the device to transmit
+		PULLDOWNER 		= 0; 	//OPEN DRAIN 1 is DOWN!!!
+		StateOfLevels 	= 2;
+	}
+	
 	if(StateOfLevels == 0)
 	{
 		//Release the TX line
@@ -55,11 +63,12 @@ void TIMER0A_Handler()
 			PULLDOWNER = 1; //OPEN DRAIN //tested
 		}
 	}
-	else
+	else if(StateOfLevels == 1)
 	{
+		StateOfLevels = 0; 			//Reset state machine
 		if(MaxSend)
 		{
-			StateOfLevels = 0; 			//Reset state machine
+			
 			
 			if(PingPongSemaphore == 0)
 			{
@@ -82,7 +91,11 @@ void TIMER0A_Handler()
 			UARTDMAEnable(UART1_BASE, UART_DMA_TX);		//DMA stuff
 			uDMAChannelRequest(UDMA_CHANNEL_UART1TX);	//DMA stuff
 		}
-	}	
+	}
+	else
+	{
+		StateOfLevels = 0; 
+	}
 
 	return;
 }
@@ -104,7 +117,7 @@ void TIMER1A_Handler()// 1/ 40 Seconds
 	}
 	else
 	{
-		DEro = 0;			//Turn on the abiltity for the device to transmit
+		DEro = 0;			//Turn off the abiltity for the device to transmit
 	}
 	
 }
