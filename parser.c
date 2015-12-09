@@ -216,12 +216,13 @@ void getCommand(U8 Pick[] ,U8 *maxSize)
 				break;
 			case(6)://POLL
 				SaveM 			= MaxSend;
+				MasterOn 		= false;
 				MasterSlave 	= Slave;
 				MaxSend 		= 511;
 				ThePollTrigger 	= false;
 				ShadowDMX[0] 	= 0xF0;
 				BREAK 			= false;
-				for( j = 1 ; j <= SaveM; j++ )//Prep the data to check the range as described
+				for( j = 1 ; j <= 513; j++ )//Prep the data to check the range as described
 				{
 					for(k=1;k < 513;k++)//The entire 
 					{
@@ -253,6 +254,7 @@ void getCommand(U8 Pick[] ,U8 *maxSize)
 					{
 						printf("Address %03d\r\n", j);
 					}
+					
 				}
 /*				
 	First is dumb dumb check 
@@ -263,7 +265,8 @@ void getCommand(U8 Pick[] ,U8 *maxSize)
 				* If there is one in both. Do single search through then entire thing
 				else 
 				* Search in the on the is occupied
-*/
+*/					
+					MasterSlave = Slave;
 					MaxSend = SaveM;
 				break;
 			case(7)://Show
@@ -295,7 +298,7 @@ void getCommand(U8 Pick[] ,U8 *maxSize)
 				printf("\r\n");
 				break;
 			case(8)://master
-				MasterSlave = Slave;
+				MasterSlave = Master;
 				printf("MASTER\r\n");
 				break;
 			case(9)://slave

@@ -27,7 +27,7 @@ unsigned char 			pui8DMAControlTable[1024]__attribute__((aligned (1024*8)));//TH
 
 volatile U8		UartRingBuffer[MAXRINGBUFSIZE]; //Max length of NEMA sentece is 80 and the max STX is 154
 volatile U16	HIndex, TIndex;			//Internal Indexs
-volatile U8 	TxReady;
+volatile U8 	TxReady;				//Flags
 uint8_t 		pui8DMAControlTable[1024];//THIS IS REQUIRED FOR DMA DO NOT ASK. DO NOT CHANGE. DO NOT MOVE
 
 /*----------------------------------------------------------------------------
@@ -42,6 +42,7 @@ uint8_t 		pui8DMAControlTable[1024];//THIS IS REQUIRED FOR DMA DO NOT ASK. DO NO
 ////////////////////////////////////////////////////////////////////////////////
 void UART5_Handler()	//Nope
 {
+	//used for debug
 	return;
 }
 
@@ -51,7 +52,7 @@ void UART1_Handler()//DMX
 	volatile U8 Foo;
 	
 	
-	if(UART1->RIS & UART_RIS_TXRIS) //CHECK ON THE FRAMMING ERROR!
+	if(UART1->RIS & UART_RIS_TXRIS) //CHECK to see if the DMA is done
 	{
 		UARTIntDisable(UART1_BASE, UART_INT_TX);
 		UARTIntClear(UART1_BASE,UART_INT_TX);			//Clear Flag
@@ -63,11 +64,11 @@ void UART1_Handler()//DMX
 		TIMER0->CTL |= TIMER_CTL_TAEN | TIMER_CTL_TBEN;
 	}
 	
-	if(UART1->RIS & UART_RIS_BERIS) //CHECK ON THE FRAMMING ERROR!
+	if(UART1->RIS & UART_RIS_BERIS) //Check the break
 	{
-		UARTIntClear(UART1_BASE,UART_INT_BE);			//Clear Flag
-		Incoming_Counter 	= 0;
-		BREAK 				= true;//break happened
+		UARTIntClear(UART1_BASE,UART_INT_BE);	//Clear Flag
+		Incoming_Counter 	= 0;				//Clear it
+		BREAK 				= true;				//break happened
 	}
 	
 	if (UART1->RIS & UART_RIS_RXRIS)				//Got a Byte of Data?//RX IF
@@ -78,32 +79,23 @@ void UART1_Handler()//DMX
 
 		if(Incoming_Counter == 0)
 		{
-			IncomingDMX[0] = Foo;//COMMAND
-			if(IncomingDMX[0] == 0xF0)
+			IncomingDMX[0] = Foo;		//Command is the first byte
+			if(IncomingDMX[0] == 0xF0)	//THe is is a poll request
 			{
-				//This triggers the break mode.
-				ThePollTrigger = true;
+				ThePollTrigger = true;	//This triggers the break mode.
 			}
 		}
 		
-		if(Incoming_Counter == Address + 1)	//LED
+		if(Incoming_Counter == Address + 1 && !ThePollTrigger)	//LED
 		{
 			IncomingDMX[1] 	= Foo;//DATA!!!
-//			if(ThePollTrigger)
-//			{
-//				
-//			
-//			//	Incoming_Counter 	= 514;	//there is no data after this
-//				//no need to return early. as the counter is > 513
-//			}
 		}
 		
-		if(Incoming_Counter == Address + 2)//Servo
+		if(Incoming_Counter == Address + 2 && !ThePollTrigger)//Servo
 		{
 			IncomingDMX[2] 		= Foo;//DATA!!!
+			Incoming_Counter 	= 514;	//there is no data after this
 			RXREADY 			= true;
-			if(!ThePollTrigger)
-				Incoming_Counter 	= 514;	//there is no data after this
 		}
 		
 		Incoming_Counter++;//Increament the counter

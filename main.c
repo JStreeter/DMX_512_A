@@ -111,16 +111,16 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	GPIODirModeSet(GPIOD_BASE,GPIO_PIN_2,GPIO_DIR_MODE_OUT);
 	
 	//Leds First
-//    GPIOPadConfigSet(GPIOF_BASE,GPIO_PIN_1 | GPIO_PIN_2| GPIO_PIN_3,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
-//	GPIODirModeSet(GPIOF_BASE,GPIO_PIN_1 | GPIO_PIN_2| GPIO_PIN_3,GPIO_DIR_MODE_OUT);
+    GPIOPadConfigSet(GPIOF_BASE,GPIO_PIN_1 | GPIO_PIN_2| GPIO_PIN_3,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
+	GPIODirModeSet(GPIOF_BASE,GPIO_PIN_1 | GPIO_PIN_2| GPIO_PIN_3,GPIO_DIR_MODE_OUT);
 	
-    GPIOPadConfigSet(GPIOF_BASE,GPIO_PIN_1 |  GPIO_PIN_3,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
-	GPIODirModeSet(GPIOF_BASE,GPIO_PIN_1 |  GPIO_PIN_3,GPIO_DIR_MODE_OUT);
-	//Leds First Blue PWM
-	GPIOPadConfigSet(GPIOF_BASE,GPIO_PIN_2,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
-	GPIODirModeSet(GPIOF_BASE,GPIO_PIN_2,GPIO_DIR_MODE_HW);
-		//I/O
-	GPIOPinConfigure(GPIO_PF2_M1PWM6);
+//////////    GPIOPadConfigSet(GPIOF_BASE,GPIO_PIN_1 |  GPIO_PIN_3,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
+//////////	GPIODirModeSet(GPIOF_BASE,GPIO_PIN_1 |  GPIO_PIN_3,GPIO_DIR_MODE_OUT);
+	//PWM A6
+	GPIOPadConfigSet(GPIOA_BASE,GPIO_PIN_6,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
+	GPIODirModeSet(GPIOA_BASE,GPIO_PIN_6,GPIO_DIR_MODE_HW);
+		
+	GPIOPinConfigure(GPIO_PA6_M1PWM2);
 	
 	
 	//Push Buttons
@@ -228,13 +228,11 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 int main(void)
 {
 //    U32 lfsr = 0xAAAAu;/* Any nonzero start state will work. */
-	volatile S16 TempCh;
-	U16 In,oldIn,RxBufpt;
+	volatile S16 TempCh;	//for the user input
+	U16 In,oldIn,RxBufpt;	//
 	U16 Buffer[5];
 	U32 PWM;
 	volatile U32 BaseTime = TimeDebug1;
-//	unsigned bit;
-//	U8 Ms = 1;
 	U8 x;
 	
 	IO_RESET = 0;
@@ -271,10 +269,7 @@ int main(void)
 	TIMER1->CTL |= TIMER_CTL_TAEN | TIMER_CTL_TBEN;		//GO!!!
 	
 	
-	
-	x = 0;
-	IO_RESET = 1;
-	DEro = 0;
+	x = 0; IO_RESET = 1; DEro = 0;
 	SpiSetup();											//Spi setup
 	SSIIntEnable(SSI3_BASE,SSI_RXFF);					//Interrupt enable
 	
@@ -312,14 +307,14 @@ int main(void)
 	
 	printf("In = %02X %s\r\n",In&0x1FF,MasterSlave==Master?"Master":"Slave");
 	
-	MaxSend = 4;										//DEBUG!!!
+	MaxSend = 4;	//DEBUG!!!
 	
-	PWM_Setup();
-	HWREG(SYSCTL_RCC) |= SYSCTL_RCC_USEPWMDIV | SYSCTL_RCC_PWMDIV_64;
+	PWM_Setup();	//Setup
+	HWREG(SYSCTL_RCC) |= SYSCTL_RCC_USEPWMDIV | SYSCTL_RCC_PWMDIV_64;	// 
 	PWM = 0;
 	
 	PWM += ( ( (1952-390) / 128 ) * 64 ) + 1;
-	PWMPulseWidthSet(PWM1_BASE, PWM_OUT_6, PWM);
+	PWMPulseWidthSet(PWM1_BASE, PWM_OUT_2, PWM);
 	
 	while(1)
 	{			
@@ -339,48 +334,36 @@ int main(void)
 			oldIn = In;			//Prevent spam
 		}
 
-//		{	//DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG 
-//			if(!GPIOPinRead(GPIOF_BASE, GPIO_PIN_4))
-//			{
-//				Incoming_Counter= 0;
-//				DEBUGENputc(0x00);
-//				x++;
-//				DEBUGENputc(x-1);
-//				DEBUGENputc(x);
-//				DEBUGENputc(x+1);
-////				RED_LED ^= 1;
-//				while(!GPIOPinRead(GPIOF_BASE, GPIO_PIN_4));
-//			}
-//		}	//DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG 
-
 		{	//Keep Alive light
 			if(	Semaphore >= 1)	
 			{	
-				
-				//BLUE_LED ^= 1;
+				BLUE_LED ^= 1;
 				Semaphore = 0;
-			//	printf("%d\r\n",PWM);
+			
 				//390 	//1 ms
 				//1,562 // 2 ms
 //				PWM += (1952-390) / 64;
 //				if(PWM >= 1952) PWM = 390;
-//				PWMPulseWidthSet(PWM1_BASE, PWM_OUT_6, PWM);
+//				PWMPulseWidthSet(PWM1_BASE, PWM_OUT_2, PWM);
 //				WriteOutIOEX(PWM>>3);
-//				
+
 			}
 		}
 		
 		if(RXREADY)	//DMX has GOT SOMETHING!!!!
 		{
-			printf("I GOT DATA!!!\r\n %02X %02X %02X\r\n",IncomingDMX[0],IncomingDMX[1],IncomingDMX[2]);
-			WriteOutIOEX(IncomingDMX[1] & 0x7F);
-			PWM = 390 + ( ( (1952-390) / 128) * (IncomingDMX[2] % 129) ); 
-			PWMPulseWidthSet(PWM1_BASE, PWM_OUT_6, PWM);
-			RXREADY = false;
+			printf("Data -> %02X %02X %02X\r\n",IncomingDMX[0],IncomingDMX[1],IncomingDMX[2]);
+			
+			WriteOutIOEX(IncomingDMX[1] & 0x7F);	//Push to the leds
+			
+			PWM = 390 + ( ( (1952-390) / 128) * (IncomingDMX[2] % 129) ); //PWM
+			PWMPulseWidthSet(PWM1_BASE, PWM_OUT_2, PWM);
+			
+			RXREADY = false;	//And now it is gone
 		}
 
 		{	//User input
-			TempCh = RngGet(&RxBufpt);
+			TempCh = RngGet(&RxBufpt);//Get data 
 			if(TempCh != EOF)
 			{
 				parseCommand((U8)TempCh);
@@ -388,10 +371,4 @@ int main(void)
 		}
 	}
 	//Should never end up here
-}
-
-void masscopy()
-{
-
-	return;
 }
