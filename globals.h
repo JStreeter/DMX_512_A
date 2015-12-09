@@ -53,6 +53,8 @@ extern U16 	MaxSend;
 #define RXREADY					SWREGBITW(&BBFlags, 3)
 #define ThePollTrigger			SWREGBITW(&BBFlags, 4)
 #define BREAK					SWREGBITW(&BBFlags, 5)
+#define OneShotTX				SWREGBITW(&BBFlags, 6)
+#define OneShotRX				SWREGBITW(&BBFlags, 7)
 
 typedef enum
 {

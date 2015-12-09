@@ -239,7 +239,7 @@ int main(void)
 	
 	IO_RESET = 0;
 	
-	UARTIntEnable(UART0_BASE,UART_INT_RX | UART_INT_DMATX);				//Uart Intterrupt for USer
+	UARTIntEnable(UART0_BASE,UART_INT_RX );				//Uart Intterrupt for USer
 	UARTIntEnable(UART1_BASE,UART_INT_RX | UART_INT_BE);//Incoming DMX PLUS frame error to reset the counter
 	//UARTIntEnable(UART5_BASE,UART_INT_TX);			//Extra uart for testing
 	IntGlobals();										// Set all of the varibles to intail settings
@@ -250,7 +250,7 @@ int main(void)
 
 	IntEnable(INT_UART0);								//DEBUG PORT
 	IntEnable(INT_UART1);								//DMX PORT
-	IntEnable(INT_UART5);								//DEBUG TX ONLY!!! NOT FOR TRUE USE
+	//IntEnable(INT_UART5);								//DEBUG TX ONLY!!! NOT FOR TRUE USE
 	
 	IntEnable(INT_TIMER0A);								//The Break Before Make timer
 	IntEnable(INT_TIMER1A);								// 40 hertz
@@ -339,19 +339,19 @@ int main(void)
 			oldIn = In;			//Prevent spam
 		}
 
-		{	//DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG 
-			if(!GPIOPinRead(GPIOF_BASE, GPIO_PIN_4))
-			{
-				Incoming_Counter= 0;
-				DEBUGENputc(0x00);
-				x++;
-				DEBUGENputc(x-1);
-				DEBUGENputc(x);
-				DEBUGENputc(x+1);
-				RED_LED ^= 1;
-				while(!GPIOPinRead(GPIOF_BASE, GPIO_PIN_4));
-			}
-		}	//DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG 
+//		{	//DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG 
+//			if(!GPIOPinRead(GPIOF_BASE, GPIO_PIN_4))
+//			{
+//				Incoming_Counter= 0;
+//				DEBUGENputc(0x00);
+//				x++;
+//				DEBUGENputc(x-1);
+//				DEBUGENputc(x);
+//				DEBUGENputc(x+1);
+////				RED_LED ^= 1;
+//				while(!GPIOPinRead(GPIOF_BASE, GPIO_PIN_4));
+//			}
+//		}	//DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG 
 
 		{	//Keep Alive light
 			if(	Semaphore >= 1)	
@@ -362,10 +362,10 @@ int main(void)
 			//	printf("%d\r\n",PWM);
 				//390 	//1 ms
 				//1,562 // 2 ms
-				PWM += (1952-390) / 64;
-				if(PWM >= 1952) PWM = 390;
-				PWMPulseWidthSet(PWM1_BASE, PWM_OUT_6, PWM);
-				WriteOutIOEX(PWM>>3);
+//				PWM += (1952-390) / 64;
+//				if(PWM >= 1952) PWM = 390;
+//				PWMPulseWidthSet(PWM1_BASE, PWM_OUT_6, PWM);
+//				WriteOutIOEX(PWM>>3);
 //				
 			}
 		}

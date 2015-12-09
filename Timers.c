@@ -41,6 +41,13 @@ void TIMER0A_Handler()
 {	
 	static U8 StateOfLevels = 0;
 	TimerIntClear(TIMER0_BASE,TIMER_TIMA_TIMEOUT);//TIMER TIME OUT
+	
+	if(OneShotRX)
+	{
+		OneShotRX =  false;
+		return;
+	}
+	
 	//110 uS have already Passed.
 	//OR
 	//14 uS have passed and the data should shart sending
@@ -90,6 +97,10 @@ void TIMER0A_Handler()
 			uDMAChannelEnable(UDMA_CHANNEL_UART1TX);	//DMA stuff
 			UARTDMAEnable(UART1_BASE, UART_DMA_TX);		//DMA stuff
 			uDMAChannelRequest(UDMA_CHANNEL_UART1TX);	//DMA stuff
+			if(OneShotTX)
+			{
+				UARTIntEnable(UART1_BASE, UART_INT_TX);
+			}
 		}
 	}
 	else
@@ -110,7 +121,7 @@ void TIMER1A_Handler()// 1/ 40 Seconds
 	
 	Semaphore += 1; 		//Not a semaphore
 	
-	if(MasterSlave == Master)
+	if(MasterSlave == Master || OneShotTX )
 	{
 		PULLDOWNER = 0; 	//OPEN DRAIN 1 is DOWN!!!
 		DEro = 1;			//Turn on the abiltity for the device to transmit
@@ -129,5 +140,5 @@ void TIMER2A_Handler()// 1/ 40 Seconds
 //	Incoming_Counter = 0;
 //	TIMER2->TAILR = 10000; // 112 uSeconds
 //	TIMER2->CTL |= TIMER_CTL_TAEN | TIMER_CTL_TBEN;
-	RED_LED ^= 1;
+//	RED_LED ^= 1;
 }

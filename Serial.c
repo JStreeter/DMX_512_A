@@ -51,14 +51,16 @@ void UART1_Handler()//DMX
 	volatile U8 Foo;
 	
 	
-	if(UART1->RIS & UART_RIS_DMATXRIS) //CHECK ON THE FRAMMING ERROR!
+	if(UART1->RIS & UART_RIS_TXRIS) //CHECK ON THE FRAMMING ERROR!
 	{
-		UARTIntClear(UART1_BASE,UART_INT_DMATX);			//Clear Flag
-		/*
-			
-		*/
-		RED_LED ^= 1;
-		BREAK |=  true;
+		UARTIntDisable(UART1_BASE, UART_INT_TX);
+		UARTIntClear(UART1_BASE,UART_INT_TX);			//Clear Flag
+		//add 
+		OneShotRX = true;
+		OneShotTX = false;//The one shot is gone
+		DEro = 0;			//Turn off the abiltity for the device to transmit
+		TIMER0->TAILR = 5500 ; 	// 112 uSeconds
+		TIMER0->CTL |= TIMER_CTL_TAEN | TIMER_CTL_TBEN;
 	}
 	
 	if(UART1->RIS & UART_RIS_BERIS) //CHECK ON THE FRAMMING ERROR!
@@ -66,7 +68,6 @@ void UART1_Handler()//DMX
 		UARTIntClear(UART1_BASE,UART_INT_BE);			//Clear Flag
 		Incoming_Counter 	= 0;
 		BREAK 				= true;//break happened
-//		RED_LED ^= 1;
 	}
 	
 	if (UART1->RIS & UART_RIS_RXRIS)				//Got a Byte of Data?//RX IF
@@ -130,7 +131,7 @@ void UART1_Handler()//DMX
 	 uint32_t status;
 	if (UART0->RIS & UART_RIS_RXRIS)				//Got a Byte of Data?//RX IF
 	{
-		GREEN_LED ^= 1;								//Toggle Green led to show it is working
+//		GREEN_LED ^= 1;								//Toggle Green led to show it is working
 		UARTIntClear(UART0_BASE,UART_INT_RX);		//Clear Flag
 		RngAdd(UART0->DR & 0xFF);		//Yes this is all it does	//A
 	}
@@ -305,7 +306,7 @@ void UartWrite(U8 *DataToSend, U16 Length)
 ////	// initiated transfer, a request must also be made. The request starts the
 ////	// transfer.
 ////	//
-	UARTIntEnable(UART1_BASE,UART_INT_DMATX);
+//	UARTIntEnable(UART1_BASE,UART_INT_DMATX);
 
 //        // DMA channel must be enabled first, or an interrupt will occur immediately
 	uDMAChannelEnable(UDMA_CHANNEL_UART1TX);

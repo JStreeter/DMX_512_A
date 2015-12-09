@@ -93,7 +93,7 @@ static const char HELLO3[][20] =
 void getCommand(U8 Pick[] ,U8 *maxSize)
 {
 	U8 i;
-	U16 j,Input,Par[4];
+	U16 j,k,x,Input,Par[4];
 	static U16 SaveM = 0,GoGOFlag = 0;
 	
 	char* Value;
@@ -215,26 +215,45 @@ void getCommand(U8 Pick[] ,U8 *maxSize)
 				}
 				break;
 			case(6)://POLL
-				printf("EMERGANCY!!! FIRE!!! CLOSE DOWN SYSTEM AND RUN!!!\r\n");
-				SaveM = MaxSend;
-				MaxSend = 511;
-				
-				for( j = 1 ; j <= SaveM; j++ )
+				SaveM 			= MaxSend;
+				MasterSlave 	= Slave;
+				MaxSend 		= 511;
+				ThePollTrigger 	= false;
+				ShadowDMX[0] 	= 0xF0;
+				BREAK 			= false;
+				for( j = 1 ; j <= SaveM; j++ )//Prep the data to check the range as described
 				{
-					//Turn on TX mode
-					//Clear
-					//Prep the data to check the range as described
+					for(k=1;k < 513;k++)//The entire 
+					{
+						if(k == j)
+						{
+							ShadowDMX[k] = 1;
+						}
+						else
+						{
+							ShadowDMX[k] = 0x00;//Clear all none 
+						}
+					}
+					
+					
+					PingPongSemaphore = 0;
+					
+					memcpy(A_DMX,ShadowDMX,513);
+					
+					OneShotTX = true;//Turn on TX mode
+					
 					//Send data
-					//Check for frame error
-					//Adjust the data set and check again
-					//Always check Above and below
+					while(OneShotRX);// <-----------------------------------------------------------------------WHILE !
+					
+					if(BREAK)
+					{
+						printf("Address %03d <>\r\n", j);
+					}
+					else
+					{
+						printf("Address %03d\r\n", j);
+					}
 				}
-				
-				
-				
-				
-				
-
 /*				
 	First is dumb dumb check 
 		- Send the entire thing with all ones
@@ -277,7 +296,7 @@ void getCommand(U8 Pick[] ,U8 *maxSize)
 				break;
 			case(8)://master
 				MasterSlave = Slave;
-				printf("SLAVE\r\n");
+				printf("MASTER\r\n");
 				break;
 			case(9)://slave
 				MasterSlave = Slave;
