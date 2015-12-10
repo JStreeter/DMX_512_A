@@ -18,6 +18,7 @@
 #include "driverlib/interrupt.h"
 #include "inc/hw_ints.h"
 #include "inc/hw_ssi.h"
+#include "inc/hw_types.h"
 #include <string.h>
 #include "inc/hw_timer.h"
 
@@ -49,40 +50,67 @@ void UART5_Handler()//DMX
 
 void UART1_Handler()//DMX
 {
-	volatile U8 Foo;
+	volatile U8 	Foo;
+	volatile U32 	IntterruptReg;
+	volatile U32 	Tryit;
+	U8 				check;
 	
-	
-	if(UART1->RIS & UART_RIS_BERIS) //CHECK ON THE FRAMMING ERROR!
+	IntterruptReg = UART1->RIS;
+	Tryit = UART1->DR;
+	check = 1;
+	if(Tryit & 0x0F00) //CHECK ON THE FRAMMING ERROR!
 	{
 		UARTIntClear(UART1_BASE,UART_INT_BE);			//Clear Flag
+		UARTIntClear(UART1_BASE,UART_RIS_FERIS);
+		
 		Incoming_Counter = 0;
+		Tryit = 0xFFFFFFFF;
+		return;
 	}
 	
-	if (UART1->RIS & UART_RIS_RXRIS)				//Got a Byte of Data?//RX IF
+	if (IntterruptReg & UART_RIS_RXRIS)				//Got a Byte of Data?//RX IF
 	{
 		UARTIntClear(UART1_BASE,UART_INT_RX);			//Clear Flag
-		UARTIntClear(UART1_BASE,UART_INT_BE);			//Clear Flag
-		Foo = UART1->DR;
+		
+		do
+		{
+			if(check)
+			{
+				Foo = (U8)Tryit;
+				check = 0;
+			}
+			else
+			{
+				Foo = (U8) UART1->DR;
+			}
 
-		if(Incoming_Counter == 0)
-		{
-			IncomingDMX[0] = Foo;//COMMAND
-		}
-		
-		if(Incoming_Counter == Address + 1)
-		{
-			IncomingDMX[1] 	= Foo;//DATA!!!
-			RXREADY 		= 1;
-		}
-		
-		Incoming_Counter++;
-		
-		if(Incoming_Counter >= 513)
-		{
 			
-			Incoming_Counter 	= 0;
-		}
+			//printf("%02X ",Foo);
+			if(Incoming_Counter == 0)
+			{
+				IncomingDMX[0] = Foo;//COMMAND
+			}
+			
+			if(Incoming_Counter == Address + 1 )
+			{
+				IncomingDMX[1] 	= Foo;//DATA!!!
+			}
+			else if(Incoming_Counter == Address + 2)//Servo
+			{
+				IncomingDMX[2] 		= Foo;//DATA!!!
+				RXREADY 			= true;
+			}
+			
+			Incoming_Counter++;
+			
+			if(Incoming_Counter >= 513)
+			{
+				
+				Incoming_Counter 	= 0;
+			}
+		}while(!HWREG(UART1_BASE + UART_O_FR) & UART_FR_RXFE);
 	}
+	
 	return;
 }
 

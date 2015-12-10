@@ -11,7 +11,7 @@ U8	B_DMX[513];//THIS IS REQUIRED FOR DMX DO NOT ASK
 
 U8 	ShadowDMX[513];//The thing we play with before we transmitt
 
-U8 	IncomingDMX[2];
+U8 	IncomingDMX[6];
 U16 	Address;
 U8 LocalHead;
 

@@ -31,6 +31,8 @@ typedef enum
 #define CS      			(*((volatile uint32_t *)(0x42000000 + (0x400073FC-0x40000000)*32 + 1*4)))
 #define RED_LED      		(*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 1*4)))
 #define BLUE_LED      		(*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 2*4)))
+//#warning BLUE LED IS RUINED!!!
+//#define BLUE_LED      		(*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 8*4)))
 #define GREEN_LED   		(*((volatile uint32_t *)(0x42000000 + (0x400253FC-0x40000000)*32 + 3*4)))
 #define DEro	   			(*((volatile uint32_t *)(0x42000000 + ((GPIOC_BASE + 0x3FC) -0x40000000)*32 + 6*4)))
 #define PULLDOWNER 			(*((volatile uint32_t *)(0x42000000 + ((GPIOD_BASE + 0x3FC) -0x40000000)*32 + 6*4)))
@@ -40,7 +42,7 @@ extern U8	A_DMX[513];
 extern U8	B_DMX[513];
 extern U8 	ShadowDMX[513];
 extern U16 	Incoming_Counter;
-extern U8 	IncomingDMX[2];
+extern U8 	IncomingDMX[6];
 extern U16 	Address;
 extern U32 	BBFlags;
 extern U16 	MaxSend;
@@ -49,8 +51,12 @@ extern U16 	MaxSend;
 #define LastPingPongSemaphore	SWREGBITW(&BBFlags, 1)
 #define Master_Slave			SWREGBITW(&BBFlags, 2)
 #define RXREADY					SWREGBITW(&BBFlags, 3)
-
-
+#define ThePollTrigger			SWREGBITW(&BBFlags, 4)
+#define BREAK					SWREGBITW(&BBFlags, 5)
+#define OneShotTX				SWREGBITW(&BBFlags, 6)
+#define OneShotRX				SWREGBITW(&BBFlags, 7)
+#define MasterOn				SWREGBITW(&BBFlags, 8)
+#define StillBroke				SWREGBITW(&BBFlags, 5)
 typedef enum
 {
 	Null,						//Empty

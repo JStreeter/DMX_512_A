@@ -29,6 +29,8 @@ D6 Override
 #include "inc/hw_ssi.h"
 #include "inc/hw_uart.h"
 
+
+#include "driverlib/pwm.h"
 #include "driverlib/interrupt.h"
 #include "driverlib/cpu.h"
 #include "driverlib/debug.h"
@@ -79,6 +81,7 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_UART1);//B0,B1
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_UART5);//E5
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_UDMA); // Serial DMA
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_PWM1); //Servo
 	
 	SysCtlGPIOAHBDisable(SYSCTL_PERIPH_GPIOF);	//un needed
 	
@@ -103,6 +106,12 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	//Pulldowner
 	GPIOPadConfigSet(GPIOD_BASE,GPIO_PIN_6,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_OD);
 	GPIODirModeSet(GPIOD_BASE,GPIO_PIN_6,GPIO_DIR_MODE_OUT);
+	
+	//PWM A6
+	GPIOPadConfigSet(GPIOA_BASE,GPIO_PIN_6,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
+	GPIODirModeSet(GPIOA_BASE,GPIO_PIN_6,GPIO_DIR_MODE_HW);
+		
+	GPIOPinConfigure(GPIO_PA6_M1PWM2);
 	
 	//Reset Line to the IO Expander
 	GPIOPadConfigSet(GPIOD_BASE,GPIO_PIN_2,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD);
@@ -131,7 +140,6 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	UARTEnable(UART0_BASE);
 	UARTClockSourceSet(UART0_BASE,UART_CLOCK_SYSTEM);
 /*DEBUG*/	UARTConfigSetExpClk(UART0_BASE, SysCtlClockGet(), DebugBaud, UART_CONFIG_WLEN_8 | UART_CONFIG_PAR_NONE | UART_CONFIG_STOP_ONE);
-	//UARTConfigSetExpClk(UART0_BASE, SysCtlClockGet(), DMXBAUD, UART_CONFIG_WLEN_8 | UART_CONFIG_PAR_NONE | UART_CONFIG_STOP_ONE);	
 	UARTFIFODisable(UART0_BASE);
 	
 //END/////////////Debug//////////////////////////////////////////////////////////////////////////////////
@@ -156,7 +164,7 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	UARTEnable(UART1_BASE);
 	UARTClockSourceSet(UART1_BASE,UART_CLOCK_SYSTEM);
 	UARTConfigSetExpClk(UART1_BASE, SysCtlClockGet(), DMXBAUD, UART_CONFIG_WLEN_8 | UART_CONFIG_PAR_NONE | UART_CONFIG_STOP_TWO);
-	UARTFIFODisable(UART1_BASE);
+	//UARTFIFODisable(UART1_BASE);
 	
 	GPIOPinConfigure(GPIO_PC5_U1TX);
 	GPIOPinConfigure(GPIO_PC4_U1RX);
@@ -168,6 +176,8 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 	//Fault Pin
 	GPIOPadConfigSet(GPIOC_BASE,GPIO_PIN_7,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD_WPU);
 	GPIODirModeSet(GPIOC_BASE,GPIO_PIN_7,GPIO_DIR_MODE_IN);
+	
+	
 //END/////////////DMX-512-A//////////////////////////////////////////////////////////////////////////////////
 
 //TIMER//
@@ -217,20 +227,21 @@ void SystemInit() //THIS RUNS FIRST!!! on BOOT UP!!
 
 int main(void)
 {
-    U32 lfsr = 0xAAAAu;/* Any nonzero start state will work. */
 	volatile S16 TempCh;
 	U16 In,oldIn,RxBufpt;
 	U16 Buffer[5];
 	volatile U32 BaseTime = TimeDebug1;
-	unsigned bit;
-	U8 Ms = 1;
+	U32 PWM;
 	U8 x;
 	
 	IO_RESET = 0;
 	
 	UARTIntEnable(UART0_BASE,UART_INT_RX);				//Uart Intterrupt for USer
-	UARTIntEnable(UART1_BASE,UART_INT_RX | UART_INT_BE);//Incoming DMX PLUS frame error to reset the counter
+	
+	UARTIntEnable(UART1_BASE,UART_INT_RX);				//Incoming DMX PLUS frame error to reset the counter
+	UARTIntEnable(UART1_BASE,UART_INT_BE);
 	//UARTIntEnable(UART5_BASE,UART_INT_TX);			//Extra uart for testing
+	
 	IntGlobals();										// Set all of the varibles to intail settings
 	
 	TimerIntEnable(TIMER0_BASE,TIMER_TIMA_TIMEOUT);		//Short timer for the Break and MAB
@@ -259,7 +270,11 @@ int main(void)
 	TIMER1->TAILR = 1250000;//1 / 40 					//Time set to 40 hertz
 	TIMER1->CTL |= TIMER_CTL_TAEN | TIMER_CTL_TBEN;		//GO!!!
 	
+	HWREG(SYSCTL_RCC) |= SYSCTL_RCC_USEPWMDIV | SYSCTL_RCC_PWMDIV_64;	// 
+	PWM = 0;
 	
+	PWM += ( ( (1952-390) / 128 ) * 64 ) + 1;
+	PWMPulseWidthSet(PWM1_BASE, PWM_OUT_2, PWM);
 	
 	x = 0;
 	IO_RESET = 1;
@@ -285,24 +300,24 @@ int main(void)
 	
 	BLUE_LED = 1;//Blue is on							// Waiting for ther user to press a button
 
-	while(GPIOPinRead(GPIOF_BASE, GPIO_PIN_4));			//Wait of user
+	//while(GPIOPinRead(GPIOF_BASE, GPIO_PIN_4));			//Wait of user
 	BLUE_LED = 0; 										// Blue is now off
 
 	DMA_Setup_UART1();									//Vroom Vroom!!!
-	
-	lfsr =0xFFFF;	//Debug
-														
+
 	WriteOutIOEX(0);									//First Write to the spi so that it setup for a read	
 	printf("Ready\r\n");								//Set to go 
 	
-	MasterSlave = Master;								//We start off by being master
+	MasterSlave = Slave;								//We start off by being master
 	
 	In =  ReadAddessEXIO();								//WHAT IS THE ADDRESS!!!!
 	oldIn = In;											//Setup
 	Address = In;										//Setup
 	
 	printf("In = %02X %s\r\n",In&0x1FF,MasterSlave==Master?"Master":"Slave");
-	
+	PWM_Setup();	//Setup
+	HWREG(SYSCTL_RCC) |= SYSCTL_RCC_USEPWMDIV | SYSCTL_RCC_PWMDIV_64;	// 
+
 	MaxSend = 4;										//DEBUG!!!
 	
 	while(1)
@@ -326,13 +341,19 @@ int main(void)
 		{	//DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG 
 			if(!GPIOPinRead(GPIOF_BASE, GPIO_PIN_4))
 			{
-				Incoming_Counter= 0;
-				DEBUGENputc(0x00);
-				x++;
-				DEBUGENputc(x-1);
-				DEBUGENputc(x);
-				DEBUGENputc(x+1);
-				RED_LED ^= 1;
+//				Incoming_Counter= 0;
+//				DEBUGENputc(0x00);
+//				x++;
+//				
+//				PWM = 390 + ( ( (1952-390) / 128) * (x % 129) ); //PWM
+//				PWMPulseWidthSet(PWM1_BASE, PWM_OUT_2, PWM);
+//				
+//				WriteOutIOEX(x & 0x7F);	//Push to the leds
+//				
+//				DEBUGENputc(x-1);
+//				DEBUGENputc(x);
+//				DEBUGENputc(x+1);
+//				RED_LED ^= 1;
 				while(!GPIOPinRead(GPIOF_BASE, GPIO_PIN_4));
 			}
 		}	//DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG 
@@ -347,9 +368,21 @@ int main(void)
 		
 		if(RXREADY)	//DMX has GOT SOMETHING!!!!
 		{
-			printf("I GOT DATA!!!\r\n %02X %02X\r\n",IncomingDMX[0],IncomingDMX[1]);
-			WriteOutIOEX(IncomingDMX[1] & 0x7F);
-			RXREADY = 0;
+//			printf("\r\n %3d %3d %3d %02X\r\n",Address,Address+1,Address+2,ShadowDMX[0]);
+//			for(j=1;j<513;j++)
+//			{
+//				printf("%3d ",ShadowDMX[j]);
+//				if((j) %16 == 0)
+//					printf("\r\n");
+//			}	
+			printf("Data -> %02d %02d %02d\r\n",IncomingDMX[0],IncomingDMX[1],IncomingDMX[2]);
+			
+			WriteOutIOEX(IncomingDMX[1] & 0x7F);	//Push to the leds
+			
+			PWM = 390 + ( ( (1952-390) / 128) * (IncomingDMX[2] % 129) ); //PWM
+			PWMPulseWidthSet(PWM1_BASE, PWM_OUT_2, PWM);
+			
+			RXREADY = false;	//And now it is gone
 		}
 
 		{	//User input

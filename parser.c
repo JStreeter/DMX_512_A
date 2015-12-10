@@ -245,8 +245,8 @@ void getCommand(U8 Pick[] ,U8 *maxSize)
 				printf("\r\n");
 				break;
 			case(8)://master
-				MasterSlave = Slave;
-				printf("SLAVE\r\n");
+				MasterSlave = Master;
+				printf("Master\r\n");
 				break;
 			case(9)://slave
 				MasterSlave = Slave;
