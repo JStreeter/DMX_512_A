@@ -361,8 +361,9 @@ int main(void)
 		{	//Keep Alive light
 			if(	Semaphore >= 16)	
 			{	
-				BLUE_LED ^= 1;
-				Semaphore = 0;
+				BLUE_LED = 0;
+				Semaphore = 17;
+				
 			}
 		}
 		

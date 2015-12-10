@@ -56,7 +56,9 @@ extern U16 	MaxSend;
 #define OneShotTX				SWREGBITW(&BBFlags, 6)
 #define OneShotRX				SWREGBITW(&BBFlags, 7)
 #define MasterOn				SWREGBITW(&BBFlags, 8)
-#define StillBroke				SWREGBITW(&BBFlags, 5)
+#define RedBlink				SWREGBITW(&BBFlags, 9)
+#define RedBlinkDeath			SWREGBITW(&BBFlags, 10)
+
 typedef enum
 {
 	Null,						//Empty

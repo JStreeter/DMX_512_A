@@ -59,6 +59,8 @@ void TIMER0A_Handler()
 	{
 		if(MaxSend)
 		{
+			GREEN_LED ^= 1;
+			
 			StateOfLevels = 0;
 			if(PingPongSemaphore == 0)
 			{
@@ -91,11 +93,24 @@ void TIMER1A_Handler()// 1/ 40 Seconds
 	TimerIntClear(TIMER1_BASE,TIMER_TIMA_TIMEOUT);//TIMER TIME OUT
 	//Set the Time 0 and drop the TX line
 	//Auto Resets
-	TIMER0->TAILR = 4950; // 112 uSeconds
-	TIMER0->CTL |= TIMER_CTL_TAEN | TIMER_CTL_TBEN;
+	if(RedBlinkDeath && !RedBlink)
+	{
+		RED_LED = 0;
+	}
+	
+	if(RedBlink)
+	{
+		RedBlink = false;
+		RED_LED ^= 1;
+		RedBlinkDeath = true;
+	}
+
+	
 	Semaphore += 1;
 	if(MasterSlave == Master)
 	{
+		TIMER0->TAILR = 4950; // 112 uSeconds
+		TIMER0->CTL |= TIMER_CTL_TAEN | TIMER_CTL_TBEN;
 		PULLDOWNER = 0; //OPEN DRAIN 1 is DOWN!!!
 		DEro = 1;//Turn on the abiltity for the device to transmit
 	}

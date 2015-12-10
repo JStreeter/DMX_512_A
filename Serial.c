@@ -71,6 +71,9 @@ void UART1_Handler()//DMX
 	if (IntterruptReg & UART_RIS_RXRIS)				//Got a Byte of Data?//RX IF
 	{
 		UARTIntClear(UART1_BASE,UART_INT_RX);			//Clear Flag
+
+		RedBlink = true;
+		RedBlinkDeath = false;
 		
 		do
 		{
@@ -119,7 +122,6 @@ void UART1_Handler()//DMX
 	 uint32_t status;
 	if (UART0->RIS & UART_RIS_RXRIS)				//Got a Byte of Data?//RX IF
 	{
-		GREEN_LED ^= 1;
 		UARTIntClear(UART0_BASE,UART_INT_RX);			//Clear Flag
 		RngAdd(UART0->DR & 0xFF);		//Yes this is all it does	//A
 	}

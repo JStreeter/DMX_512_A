@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include "Paser.h"
+#include "main.h"
 #include "globals.h"
 #include <string.h>
 #include <ctype.h>
@@ -192,10 +193,14 @@ void getCommand(U8 Pick[] ,U8 *maxSize)
 			case(3)://ON
 				MaxSend = SaveM;
 				GoGOFlag = 1;
+				GREEN_LED = 0;
+				RED_LED = 0;
 				printf("ON sending %d address\r\n", MaxSend);
 				break;
 			case(4)://OFF
 				MaxSend = 0;
+				GREEN_LED = 0;
+				RED_LED = 0;
 				GoGOFlag = 0;
 				printf("Off\r\n");
 				break;
@@ -245,17 +250,23 @@ void getCommand(U8 Pick[] ,U8 *maxSize)
 				printf("\r\n");
 				break;
 			case(8)://master
+				RED_LED = 0;
 				MasterSlave = Master;
 				printf("Master\r\n");
 				break;
 			case(9)://slave
 				MasterSlave = Slave;
+				GREEN_LED = 0;
 				printf("SLAVE\r\n");
 				break;
 			default://HACF
 				printf("Halt and Catch Fire\r\n");
 				break;
 		}
+		
+		Semaphore = 0;
+		BLUE_LED = 1;
+		
 		printf("Ready");
 	}
 	else
