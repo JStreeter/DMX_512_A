@@ -93,7 +93,7 @@ static const char HELLO3[][20] =
 void getCommand(U8 Pick[] ,U8 *maxSize)
 {
 	U8 i;
-	U16 j,Input,Par[4];
+	U16 j,k,Input,Par[4];
 	static U16 SaveM = 0,GoGOFlag = 0;
 	
 	char* Value;
@@ -219,7 +219,56 @@ void getCommand(U8 Pick[] ,U8 *maxSize)
 				}
 				break;
 			case(6)://POLL
-				printf("EMERGANCY!!! FIRE!!! CLOSE DOWN SYSTEM AND RUN!!!\r\n");
+				SaveM 			= MaxSend;
+				MasterSlave 	= Slave;
+				MaxSend 		= 511;
+				ThePollTrigger 	= false;
+				ShadowDMX[0] 	= 0xF0;
+				BREAK 			= false;
+				for( j = 1 ; j <= SaveM; j++ )//Prep the data to check the range as described
+				{
+					for(k=1;k < 513;k++)//The entire 
+					{
+						if(k == j)
+						{
+							ShadowDMX[k] = 1;
+						}
+						else
+						{
+							ShadowDMX[k] = 0x00;//Clear all none 
+						}
+					}
+					
+					
+					PingPongSemaphore = 0;
+					
+					memcpy(A_DMX,ShadowDMX,513);
+					
+					OneShotTX = true;//Turn on TX mode
+					
+					//Send data
+					while(OneShotRX);// <-----------------------------------------------------------------------WHILE !
+					
+					if(BREAK)
+					{
+						printf("Address %03d <>\r\n", j);
+					}
+					else
+					{
+						printf("Address %03d\r\n", j);
+					}
+				}
+/*				
+	First is dumb dumb check 
+		- Send the entire thing with all ones
+			* if there is no break... Done there are none!
+	Binary Search Find 
+			search lower then upper
+				* If there is one in both. Do single search through then entire thing
+				else 
+				* Search in the on the is occupied
+*/
+					MaxSend = SaveM;
 				break;
 			case(7)://Show
 				for(j=1;j<513;j++)

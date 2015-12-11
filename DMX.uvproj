@@ -452,6 +452,11 @@
               <FileType>5</FileType>
               <FilePath>.\Pins.txt</FilePath>
             </File>
+            <File>
+              <FileName>servo.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\servo.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

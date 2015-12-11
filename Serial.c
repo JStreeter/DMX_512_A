@@ -87,30 +87,53 @@ void UART1_Handler()//DMX
 				Foo = (U8) UART1->DR;
 			}
 
-			
-			//printf("%02X ",Foo);
-			if(Incoming_Counter == 0)
+			if(!ThePollTrigger)
 			{
-				IncomingDMX[0] = Foo;//COMMAND
+				if(Incoming_Counter == 0)
+				{
+					IncomingDMX[0] = Foo;//COMMAND
+					if(IncomingDMX[0] == 0xF0)
+					{
+						//This triggers the break mode.
+						ThePollTrigger = true;
+					}
+				}
+				
+				if(Incoming_Counter == Address + 1 )
+				{
+					IncomingDMX[1] 	= Foo;//DATA!!!
+				}
+				else if(Incoming_Counter == Address + 2)//Servo
+				{
+					IncomingDMX[2] 		= Foo;//DATA!!!
+					RXREADY 			= true;
+				}
 			}
-			
-			if(Incoming_Counter == Address + 1 )
+			else if(ThePollTrigger && (Incoming_Counter == Address + 1 ) )
 			{
-				IncomingDMX[1] 	= Foo;//DATA!!!
+				if(Foo != 0x01)
+				{
+					ThePollTrigger = false;
+				}
 			}
-			else if(Incoming_Counter == Address + 2)//Servo
-			{
-				IncomingDMX[2] 		= Foo;//DATA!!!
-				RXREADY 			= true;
-			}
-			
 			Incoming_Counter++;
 			
-			if(Incoming_Counter >= 513)
+			
+			if(ThePollTrigger && Incoming_Counter == 512)
+			{
+				//TRIGGERBREAK 100us then
+				TIMER0->TAILR 		= 4950; 	// 112 uSeconds
+				TIMER0->CTL 		|= TIMER_CTL_TAEN | TIMER_CTL_TBEN;//GOGO!
+				DEro 				= 1;	//The TX is on 100us to go!
+				PULLDOWNER			= 0;	//BREAK!!!
+			}
+			
+			if(Incoming_Counter >= 520)
 			{
 				
 				Incoming_Counter 	= 0;
 			}
+			
 		}while(!HWREG(UART1_BASE + UART_O_FR) & UART_FR_RXFE);
 	}
 	

@@ -44,6 +44,24 @@ void TIMER0A_Handler()
 	//110 uS have already Passed.
 	//OR
 	//14 uS have passed and the data should shart sending
+	
+	if(OneShotRX)
+	{
+		OneShotRX =  false;
+		return;
+	}
+	
+	//110 uS have already Passed.
+	//OR
+	//14 uS have passed and the data should shart sending
+	if(ThePollTrigger)
+	{
+		ThePollTrigger 	= false;//We are done with this
+		DEro 			= 0;	//Turn off the abiltity for the device to transmit
+		PULLDOWNER 		= 0; 	//OPEN DRAIN 1 is DOWN!!!
+		StateOfLevels 	= 2;
+	}
+	
 	if(StateOfLevels == 0)
 	{
 		//Release the TX line
@@ -81,9 +99,10 @@ void TIMER0A_Handler()
 			uDMAChannelEnable(UDMA_CHANNEL_UART1TX);
 			UARTDMAEnable(UART1_BASE, UART_DMA_TX);
 			uDMAChannelRequest(UDMA_CHANNEL_UART1TX);
-//			BLUE_LED ^= 1;
+			
 		}
-	}	
+	}
+	
 
 	return;
 }
@@ -107,7 +126,7 @@ void TIMER1A_Handler()// 1/ 40 Seconds
 
 	
 	Semaphore += 1;
-	if(MasterSlave == Master)
+	if(MasterSlave == Master || OneShotTX)
 	{
 		TIMER0->TAILR = 4950; // 112 uSeconds
 		TIMER0->CTL |= TIMER_CTL_TAEN | TIMER_CTL_TBEN;
